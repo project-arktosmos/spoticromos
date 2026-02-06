@@ -79,7 +79,8 @@
 
 	<h2 class="mt-4 text-xl font-semibold">4. Cookies</h2>
 	<p class="text-base-content/80 leading-relaxed">
-		We use essential cookies for authentication. For a detailed breakdown, please see our
+		We use essential cookies for authentication and, with your consent, analytics cookies to
+		understand site usage. For a detailed breakdown, please see our
 		<a href="/legal/cookies" class="link link-primary">Cookie Policy</a>.
 	</p>
 	<ul class="text-base-content/80 list-disc space-y-1 pl-6">
@@ -90,6 +91,12 @@
 		<li>
 			<strong>OAuth Cookie</strong> — a temporary HTTP-only cookie used during the Spotify login
 			process (expires after 10 minutes)
+		</li>
+		<li>
+			<strong>Analytics Cookies</strong> — Google Analytics cookies (<code class="text-xs">_ga</code
+			>,
+			<code class="text-xs">_ga_*</code>) set only with your explicit consent. These help us
+			understand how visitors use the site.
 		</li>
 	</ul>
 
@@ -109,6 +116,24 @@
 		<li>
 			<strong>LrcLib</strong> — to fetch song lyrics. Only track names, artist names, album names,
 			and durations are sent to this service. No personal user data is shared.
+		</li>
+		<li>
+			<strong>Google Analytics 4</strong> — with your consent, we use Google Analytics to collect
+			anonymized usage data (pages visited, session duration, browser/device type, approximate
+			location). This data is processed by Google under their
+			<a
+				href="https://policies.google.com/privacy"
+				target="_blank"
+				rel="noopener noreferrer"
+				class="link link-primary">Privacy Policy</a
+			>. No personal data (name, email, Spotify ID) is sent to Google Analytics. You can opt out at
+			any time via the cookie consent banner or by using the
+			<a
+				href="https://tools.google.com/dlpage/gaoptout"
+				target="_blank"
+				rel="noopener noreferrer"
+				class="link link-primary">Google Analytics Opt-out Add-on</a
+			>.
 		</li>
 	</ul>
 

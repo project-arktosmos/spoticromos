@@ -3,6 +3,7 @@
 	import { onMount } from 'svelte';
 	import { afterNavigate } from '$app/navigation';
 	import { spotifyService } from '$services/spotify.service';
+	import { initAnalyticsFromConsent, hasAnalyticsConsent } from '$services/cookie-consent.service';
 
 	import TopNavbar from '$components/core/TopNavbar.svelte';
 	import ThemeToggle from '$components/core/ThemeToggle.svelte';
@@ -19,10 +20,12 @@
 			// transparently, so a fresh token arrives on each full page load.
 			spotifyService.setToken(data.accessToken, Date.now() + 50 * 60 * 1000);
 		}
+
+		initAnalyticsFromConsent();
 	});
 
 	afterNavigate(() => {
-		if (typeof gtag === 'function') {
+		if (hasAnalyticsConsent() && typeof gtag === 'function') {
 			gtag('event', 'page_view', {
 				page_location: window.location.href,
 				page_title: document.title

@@ -39,8 +39,11 @@
 		"copyright": "All rights reserved."
 	},
 	"cookie": {
-		"message": "This site uses cookies and local storage for authentication and preferences.",
-		"learnMore": "Learn more",
-		"accept": "Accept"
+		"message": "We use essential cookies for authentication and preferences. We also use Google Analytics to understand how visitors use our site.",
+		"analyticsInfo": "Analytics cookies are only set with your consent. You can change your preference at any time by clearing site data.",
+		"learnMore": "Cookie Policy",
+		"privacyPolicy": "Privacy Policy",
+		"acceptAll": "Accept All",
+		"essentialOnly": "Essential Only"
 	}
 }

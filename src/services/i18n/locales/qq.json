@@ -40,7 +40,10 @@
 	},
 	"cookie": {
 		"message": "QQQQQ",
+		"analyticsInfo": "QQQQQ",
 		"learnMore": "QQQQQ",
-		"accept": "QQQQQ"
+		"privacyPolicy": "QQQQQ",
+		"acceptAll": "QQQQQ",
+		"essentialOnly": "QQQQQ"
 	}
 }

@@ -19,10 +19,10 @@
 		on your device.
 	</p>
 
-	<h2 class="mt-4 text-xl font-semibold">2. Cookies We Use</h2>
+	<h2 class="mt-4 text-xl font-semibold">2. Essential Cookies</h2>
 	<p class="text-base-content/80 leading-relaxed">
-		Spoticromos uses only essential cookies required for the service to function. We do not use
-		advertising, analytics, or tracking cookies.
+		These cookies are strictly necessary for the service to function. They are always active and do
+		not require your consent.
 	</p>
 
 	<div class="overflow-x-auto">
@@ -58,7 +58,63 @@
 		</table>
 	</div>
 
-	<h2 class="mt-4 text-xl font-semibold">3. Local Storage</h2>
+	<h2 class="mt-4 text-xl font-semibold">3. Analytics Cookies (Optional)</h2>
+	<p class="text-base-content/80 leading-relaxed">
+		If you give consent, we use Google Analytics 4 (GA4) to understand how visitors interact with
+		our site. These cookies are only set after you explicitly accept analytics in the cookie
+		consent banner. You can withdraw consent at any time by clearing your browser's site data.
+	</p>
+
+	<div class="overflow-x-auto">
+		<table class="table table-zebra w-full">
+			<thead>
+				<tr>
+					<th class="text-sm">Name</th>
+					<th class="text-sm">Provider</th>
+					<th class="text-sm">Duration</th>
+					<th class="text-sm">Purpose</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td class="font-mono text-sm">_ga</td>
+					<td class="text-sm">Google Analytics</td>
+					<td class="text-sm">2 years</td>
+					<td class="text-sm"
+						>Distinguishes unique visitors by assigning a randomly generated number as a client
+						identifier.</td
+					>
+				</tr>
+				<tr>
+					<td class="font-mono text-sm">_ga_E0XX7BNZD</td>
+					<td class="text-sm">Google Analytics</td>
+					<td class="text-sm">2 years</td>
+					<td class="text-sm">Maintains session state for Google Analytics 4.</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<p class="text-base-content/80 mt-2 leading-relaxed">
+		Google Analytics collects data such as pages visited, time spent on pages, browser type, device
+		type, and approximate geographic location (based on anonymized IP). This data is processed by
+		Google. For more information, see
+		<a
+			href="https://policies.google.com/privacy"
+			target="_blank"
+			rel="noopener noreferrer"
+			class="link link-primary">Google's Privacy Policy</a
+		>
+		and
+		<a
+			href="https://tools.google.com/dlpage/gaoptout"
+			target="_blank"
+			rel="noopener noreferrer"
+			class="link link-primary">Google Analytics Opt-out Browser Add-on</a
+		>.
+	</p>
+
+	<h2 class="mt-4 text-xl font-semibold">4. Local Storage</h2>
 	<p class="text-base-content/80 leading-relaxed">
 		In addition to cookies, we use your browser's local storage for the following purposes:
 	</p>
@@ -114,7 +170,7 @@
 		</table>
 	</div>
 
-	<h2 class="mt-4 text-xl font-semibold">4. Managing Cookies and Local Storage</h2>
+	<h2 class="mt-4 text-xl font-semibold">5. Managing Cookies and Local Storage</h2>
 	<p class="text-base-content/80 leading-relaxed">
 		You can manage cookies and local storage through your browser settings:
 	</p>
@@ -131,13 +187,33 @@
 		</li>
 	</ul>
 
-	<h2 class="mt-4 text-xl font-semibold">5. Third-Party Cookies</h2>
+	<h2 class="mt-4 text-xl font-semibold">6. Third-Party Cookies</h2>
 	<p class="text-base-content/80 leading-relaxed">
-		Spoticromos does not set any third-party cookies. We do not use analytics services, advertising
-		networks, or social media tracking pixels.
+		With your consent, Google Analytics sets cookies on your device as described in section 3. We do
+		not use advertising networks or social media tracking pixels. Apart from Google Analytics, no
+		other third-party cookies are set.
 	</p>
 
-	<h2 class="mt-4 text-xl font-semibold">6. Changes to This Policy</h2>
+	<h2 class="mt-4 text-xl font-semibold">7. Your Consent Choices</h2>
+	<p class="text-base-content/80 leading-relaxed">
+		When you first visit Spoticromos, you will see a consent banner offering two choices:
+	</p>
+	<ul class="text-base-content/80 list-disc space-y-1 pl-6">
+		<li>
+			<strong>Accept All</strong> — enables essential cookies and analytics cookies (Google
+			Analytics).
+		</li>
+		<li>
+			<strong>Essential Only</strong> — enables only the cookies required for the site to function.
+			No analytics data will be collected.
+		</li>
+	</ul>
+	<p class="text-base-content/80 mt-2 leading-relaxed">
+		You can change your preference at any time by clearing your browser's local storage for this
+		site, which will reset the consent banner.
+	</p>
+
+	<h2 class="mt-4 text-xl font-semibold">8. Changes to This Policy</h2>
 	<p class="text-base-content/80 leading-relaxed">
 		We may update this Cookie Policy from time to time. Changes will be posted on this page with
 		an updated revision date.

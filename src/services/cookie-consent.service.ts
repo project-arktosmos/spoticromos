@@ -1,9 +1,94 @@
+import { get } from 'svelte/store';
 import localStorageWritableStore from '$utils/localStorageWritableStore';
 
-export type ConsentStatus = 'pending' | 'accepted';
+export interface CookieConsent {
+	status: 'pending' | 'accepted';
+	analytics: boolean;
+}
 
-export const cookieConsentStore = localStorageWritableStore<ConsentStatus>('cookie-consent', 'pending');
+const STORAGE_KEY = 'cookie-consent';
 
-export function acceptCookies(): void {
-	cookieConsentStore.set('accepted');
+const defaultConsent: CookieConsent = {
+	status: 'pending',
+	analytics: false
+};
+
+// Migrate from the old string format ("accepted"/"pending") to the new object format.
+// Old users who already accepted will see the banner again so they can make the analytics choice.
+if (typeof window !== 'undefined') {
+	const raw = localStorage.getItem(STORAGE_KEY);
+	if (raw !== null) {
+		try {
+			const parsed = JSON.parse(raw);
+			if (typeof parsed === 'string') {
+				localStorage.removeItem(STORAGE_KEY);
+			}
+		} catch {
+			localStorage.removeItem(STORAGE_KEY);
+		}
+	}
+}
+
+export const cookieConsentStore = localStorageWritableStore<CookieConsent>(
+	STORAGE_KEY,
+	defaultConsent
+);
+
+export function acceptAllCookies(): void {
+	cookieConsentStore.set({ status: 'accepted', analytics: true });
+	loadAnalytics();
+}
+
+export function acceptEssentialOnly(): void {
+	cookieConsentStore.set({ status: 'accepted', analytics: false });
+	removeAnalytics();
+}
+
+export function hasAnalyticsConsent(): boolean {
+	const consent = get(cookieConsentStore);
+	return consent.status === 'accepted' && consent.analytics;
+}
+
+const GA_ID = 'G-E0XX7BNZD';
+
+export function loadAnalytics(): void {
+	if (typeof window === 'undefined') return;
+	if (document.getElementById('ga-script')) return;
+
+	const script = document.createElement('script');
+	script.id = 'ga-script';
+	script.async = true;
+	script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`;
+	document.head.appendChild(script);
+
+	window.dataLayer = window.dataLayer || [];
+	window.gtag = function (...args: unknown[]) {
+		window.dataLayer.push(args);
+	};
+	window.gtag('js', new Date());
+	window.gtag('config', GA_ID, { send_page_view: false });
+}
+
+export function removeAnalytics(): void {
+	if (typeof window === 'undefined') return;
+
+	const script = document.getElementById('ga-script');
+	if (script) script.remove();
+
+	window.dataLayer = [];
+
+	const cookies = document.cookie.split(';');
+	for (const cookie of cookies) {
+		const name = cookie.split('=')[0].trim();
+		if (name.startsWith('_ga') || name.startsWith('_gid')) {
+			document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname}`;
+			document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+		}
+	}
+}
+
+export function initAnalyticsFromConsent(): void {
+	if (hasAnalyticsConsent()) {
+		loadAnalytics();
+	}
 }
