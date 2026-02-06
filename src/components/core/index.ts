@@ -4,5 +4,3 @@ export { default as AppFooter } from './AppFooter.svelte';
 export { default as CollectionsView } from './CollectionsView.svelte';
 export { default as CookieBanner } from './CookieBanner.svelte';
 
-// Re-export from shared package for additional components
-export * from '@arktosmos/components/core';

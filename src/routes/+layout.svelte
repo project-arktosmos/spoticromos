@@ -1,6 +1,7 @@
 <script lang="ts">
 	import '../css/app.css';
 	import { onMount } from 'svelte';
+	import { afterNavigate } from '$app/navigation';
 	import { spotifyService } from '$services/spotify.service';
 
 	import TopNavbar from '$components/core/TopNavbar.svelte';
@@ -17,6 +18,15 @@
 			// Set expiry to 50 minutes from now — the server refreshes tokens
 			// transparently, so a fresh token arrives on each full page load.
 			spotifyService.setToken(data.accessToken, Date.now() + 50 * 60 * 1000);
+		}
+	});
+
+	afterNavigate(() => {
+		if (typeof gtag === 'function') {
+			gtag('event', 'page_view', {
+				page_location: window.location.href,
+				page_title: document.title
+			});
 		}
 	});
 </script>

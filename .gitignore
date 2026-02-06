@@ -29,3 +29,7 @@ coverage/
 
 # Build output
 /dist/
+
+# Claude
+.claude/
+CLAUDE.md

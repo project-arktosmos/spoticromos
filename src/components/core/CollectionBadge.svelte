@@ -16,15 +16,11 @@
 
 	let progressPercent = $derived(progressMax > 0 ? Math.round(progress / progressMax * 100) : 0);
 
-	let cardStyle = $derived(() => {
-		if (!rarityColor) return '';
-		return `border-color: ${rarityColor}; box-shadow: 0 0 12px ${rarityColor}40; background-color: ${rarityColor}20;`;
-	});
-
 	let computedClasses = $derived(classNames(
 		'relative flex w-full flex-col overflow-hidden rounded-lg border-2 transition-all duration-300',
 		{ 'bg-base-300': !rarityColor },
 		{ 'border-base-300': !rarityColor },
+		{ '[border-color:var(--rc)] [box-shadow:0_0_12px_var(--rc-40)] [background-color:var(--rc-20)]': !!rarityColor },
 		classes
 	));
 
@@ -40,7 +36,12 @@
 
 </script>
 
-<div class={computedClasses} style={cardStyle()}>
+<div
+	class={computedClasses}
+	style:--rc={rarityColor ?? undefined}
+	style:--rc-20={rarityColor ? `${rarityColor}20` : undefined}
+	style:--rc-40={rarityColor ? `${rarityColor}40` : undefined}
+>
 	<div class={contentClasses}>
 		<!-- Collection name -->
 		<div class="flex items-center justify-center p-2">

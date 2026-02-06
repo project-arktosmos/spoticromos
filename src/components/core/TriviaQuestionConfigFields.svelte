@@ -1,4 +1,5 @@
 <script lang="ts">
+	import classNames from 'classnames';
 	import {
 		TriviaQuestionType,
 		DEFAULT_VERIFICATION_FORMATS,
@@ -46,7 +47,7 @@
 	let defaultFormat = $derived(DEFAULT_VERIFICATION_FORMATS[questionType] ?? '');
 </script>
 
-<div class={classes}>
+<div class={classNames(classes)}>
 	<div class="flex flex-wrap items-end gap-3">
 		{#if hasSubject}
 			<label class="form-control w-28">

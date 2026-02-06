@@ -121,12 +121,12 @@
 			{#if items.length > 0 && allRarities.length > 0}
 				<div class="flex flex-col justify-center gap-2">
 					{#each rarityProgress as rp}
-						<div class="flex flex-col gap-1 rounded-lg p-2">
+						<div class="flex flex-col gap-1 rounded-lg p-2" style:--rarity-color={rp.color}>
 							<div class="flex items-center justify-between">
-								<span class="text-xs font-semibold" style="color: {rp.color};">{rp.name}</span>
+								<span class="text-xs font-semibold [color:var(--rarity-color)]">{rp.name}</span>
 								<span class="text-base-content/60 text-[10px]">{rp.owned}/{rp.total}</span>
 							</div>
-							<progress class="progress h-1.5 w-full" style="color: {rp.color};" value={rp.owned} max={rp.total}></progress>
+							<progress class="progress h-1.5 w-full [color:var(--rarity-color)]" value={rp.owned} max={rp.total}></progress>
 						</div>
 					{/each}
 				</div>
@@ -196,8 +196,8 @@
 						<thead>
 							<tr>
 								{#each allRarities as rarity}
-									<th class="border border-base-300 p-1 text-center">
-										<span class="text-[10px] font-semibold" style="color: {rarity.color};">{rarity.name}</span>
+									<th class="border border-base-300 p-1 text-center" style:--rarity-color={rarity.color}>
+										<span class="text-[10px] font-semibold [color:var(--rarity-color)]">{rarity.name}</span>
 									</th>
 								{/each}
 							</tr>
@@ -207,8 +207,8 @@
 								{#each allRarities as rarity}
 									{@const itemRarity = mRarities.find(r => r.rarity_id === rarity.id)}
 									{@const copyCount = itemRarity?.copy_count ?? 0}
-									<td class="border border-base-300 p-1 text-center">
-										<span class="text-xs font-bold" style="color: {rarity.color};">{copyCount}x</span>
+									<td class="border border-base-300 p-1 text-center" style:--rarity-color={rarity.color}>
+										<span class="text-xs font-bold [color:var(--rarity-color)]">{copyCount}x</span>
 									</td>
 								{/each}
 							</tr>
