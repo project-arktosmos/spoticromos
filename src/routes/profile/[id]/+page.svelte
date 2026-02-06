@@ -15,6 +15,10 @@
 		track_count: number;
 	}
 
+	let { data } = $props();
+
+	let isOwnProfile = $derived(data.user && profileUser ? data.user.spotifyId === profileUser.spotify_id : false);
+
 	let profileUser = $state<ProfileUser | null>(null);
 	let collections = $state<CollectionWithCount[]>([]);
 	let progressMap = $state<Map<number, CollectionProgress>>(new Map());
@@ -80,6 +84,9 @@
 					{collections.length} collection{collections.length !== 1 ? 's' : ''}
 				</p>
 			</div>
+			{#if isOwnProfile}
+				<a href="/playlists" class="btn btn-primary btn-sm ml-auto">Add Collections</a>
+			{/if}
 		</div>
 
 		{#if collections.length === 0}
@@ -88,7 +95,7 @@
 			<div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
 				{#each collections as collection (collection.id)}
 					{@const cp = progressMap.get(collection.id)}
-					<a href="/collections/{collection.id}">
+					<a href="/profile/{profileUser.spotify_id}/collection/{collection.id}">
 						<CollectionBadge
 							{collection}
 							owned={true}

@@ -31,11 +31,7 @@
 		"path": "/rarity",
 		"label": "Rarities"
 	},
-	{
-		"path": "/trivia",
-		"label": "Trivia Game"
-	},
-	{
+{
 		"path": "/trivia-templates",
 		"label": "Trivia Templates"
 	},

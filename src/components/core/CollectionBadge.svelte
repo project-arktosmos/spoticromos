@@ -27,7 +27,7 @@
 	let computedClasses = $derived(classNames(
 		'relative flex w-full flex-row overflow-hidden rounded-lg border-2 transition-all duration-300',
 		{ 'bg-base-300': !rarityColor },
-		{ 'border-black': !rarityColor },
+		{ 'border-base-300': !rarityColor },
 		classes
 	));
 
