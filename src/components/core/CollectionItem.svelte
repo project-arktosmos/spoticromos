@@ -59,7 +59,12 @@
 	});
 
 	let innerBorderClasses = $derived(classNames(
-		{ 'border-dashed': owned && !stuck }
+		{ 'border-dashed': owned && !stuck },
+		{
+			'border-base-content/20': !rarityColor && !owned,
+			'border-base-content/40': !rarityColor && owned && !stuck,
+			'border-base-content': !rarityColor && owned && stuck
+		}
 	));
 
 	let artistCellBgStyle = $derived(() => {
@@ -84,10 +89,8 @@
 		<h3 class="truncate text-center text-sm font-semibold">{item.track_name}</h3>
 	</div>
 
-	<!-- Rarity divider top -->
-	{#if rarityColor}
-		<div class={classNames("col-span-2 border-t-2", innerBorderClasses)} style={innerBorderStyle()}></div>
-	{/if}
+	<!-- Divider top -->
+	<div class={classNames("col-span-2 border-t-2", innerBorderClasses)} style={innerBorderStyle()}></div>
 
 	<!-- Row 2: Album image | Artist image -->
 	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
@@ -127,10 +130,8 @@
 		</div>
 	</div>
 
-	<!-- Rarity divider bottom -->
-	{#if rarityColor}
-		<div class={classNames("col-span-2 border-t-2", innerBorderClasses)} style={innerBorderStyle()}></div>
-	{/if}
+	<!-- Divider bottom -->
+	<div class={classNames("col-span-2 border-t-2", innerBorderClasses)} style={innerBorderStyle()}></div>
 
 	<!-- Row 3: Album | Artist -->
 	<div class="flex min-h-12 items-center justify-center bg-base-300 p-2">

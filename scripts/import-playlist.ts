@@ -7,6 +7,7 @@
  */
 
 import { initializeSchema } from '$lib/server/schema';
+import { findCollectionByPlaylistId, findCollectionTrackIds } from '$lib/server/repositories/collection.repository';
 import { resolveToken, importPlaylist } from './lib/import-core';
 
 function extractPlaylistId(input: string): string | null {
@@ -56,15 +57,26 @@ async function main() {
 	await initializeSchema();
 	const handle = await resolveToken(userId);
 
+	// Check for existing incomplete collection to resume
+	let existingCollectionId: number | undefined;
+	const existing = await findCollectionByPlaylistId(playlistId);
+	if (existing) {
+		const enrichedIds = await findCollectionTrackIds(existing.id);
+		console.log(`\n  Collection already exists (id: ${existing.id}, ${enrichedIds.size} tracks enriched)`);
+		existingCollectionId = existing.id;
+	}
+
 	console.log();
-	const result = await importPlaylist(playlistId, handle);
+	const result = await importPlaylist(playlistId, handle, existingCollectionId);
 
 	if (!result) {
 		console.error('\nImport failed.');
 		process.exit(1);
 	}
 
-	console.log(`\nDone! ${result.completed} enriched, ${result.failed} failed.`);
+	const parts = [`${result.completed} enriched`, `${result.failed} failed`];
+	if (result.skipped > 0) parts.push(`${result.skipped} skipped`);
+	console.log(`\nDone! ${parts.join(', ')}.`);
 	process.exit(0);
 }
 

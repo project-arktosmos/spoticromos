@@ -56,7 +56,7 @@
 	});
 </script>
 
-<div class="mx-auto flex min-h-screen max-w-4xl flex-col gap-6 p-8">
+<div class="flex min-h-screen w-full flex-col gap-6 p-4 tablet:p-8">
 	{#if loading}
 		<div class="flex flex-1 items-center justify-center">
 			<span class="loading loading-spinner loading-lg"></span>

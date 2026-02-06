@@ -13,7 +13,7 @@
 
 	let playlist = $state<SpotifyPlaylist | null>(null);
 	let tracks = $state<EnrichedTrack[]>([]);
-	let loading = $state(false);
+	let loading = $state(true);
 	let collectionId = $state<number | null>(null);
 	let collectionItems = $state<CollectionItemWithArtists[]>([]);
 
@@ -164,7 +164,8 @@
 
 	function startPolling() {
 		if (pollTimer) return;
-		pollTimer = setInterval(pollStatus, 1500);
+		pollStatus();
+		pollTimer = setInterval(pollStatus, 1000);
 	}
 
 	function stopPolling() {
@@ -238,11 +239,7 @@
 	);
 </script>
 
-<div class="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 p-8">
-	<div class="flex items-center gap-2">
-		<a href="/import" class="btn btn-ghost btn-sm">&larr; Back</a>
-	</div>
-
+<div class="flex min-h-screen w-full flex-col gap-6 p-4 tablet:p-8">
 	{#if playlist}
 		<PlaylistHeader
 			name={playlist.name}
@@ -252,35 +249,40 @@
 		/>
 	{/if}
 
-	{#if tracks.length > 0}
-		<EnrichmentPanel
-			totalTracks={tracks.length}
-			{enrichedCount}
-			status={jobStatus}
-			{jobTotal}
-			{jobCompleted}
-			{jobFailed}
-			{currentTrackName}
-			{latestItem}
-			onstart={startEnrichment}
-		/>
-	{/if}
-
-	{#if collectionItems.length > 0}
-		<div class="flex flex-wrap gap-4">
-			{#each collectionItems as ci (ci.track_spotify_id)}
-				<CollectionItem item={ci} />
-			{/each}
-		</div>
-	{/if}
-
-	{#if tracks.length > 0}
-		<TrackTable items={trackTableItems} highlightIndex={currentPosition} />
-	{:else if loading}
+	{#if loading}
 		<div class="flex flex-1 items-center justify-center">
 			<span class="loading loading-spinner loading-lg"></span>
 		</div>
 	{:else}
-		<p class="text-base-content/70 text-center">No tracks found.</p>
+		{#if tracks.length > 0}
+			<EnrichmentPanel
+				totalTracks={tracks.length}
+				{enrichedCount}
+				status={jobStatus}
+				{jobTotal}
+				{jobCompleted}
+				{jobFailed}
+				{currentTrackName}
+				onstart={startEnrichment}
+			/>
+		{/if}
+
+		{#if enrichedCount === tracks.length && tracks.length > 0 && collectionId}
+			<a href="/collections/{collectionId}" class="btn btn-primary btn-xl w-full">
+				View Collection
+			</a>
+		{:else if collectionItems.length > 0}
+			<div class="grid grid-cols-1 gap-4 tablet:grid-cols-2 large:grid-cols-3">
+				{#each [...collectionItems].reverse() as ci (ci.track_spotify_id)}
+					<CollectionItem item={ci} />
+				{/each}
+			</div>
+		{/if}
+
+		{#if tracks.length > 0}
+			<TrackTable items={trackTableItems} highlightIndex={currentPosition} />
+		{:else}
+			<p class="text-base-content/70 text-center">No tracks found.</p>
+		{/if}
 	{/if}
 </div>

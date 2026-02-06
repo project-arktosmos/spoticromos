@@ -135,11 +135,11 @@
 	}
 </script>
 
-<div class="mx-auto flex min-h-screen max-w-4xl flex-col gap-6 p-8">
+<div class="flex min-h-screen w-full flex-col gap-6 p-4 tablet:p-8">
 	<div class="flex items-center justify-between">
 		<h1 class="text-2xl font-bold">Collections</h1>
 		{#if user && !user.isAnonymous}
-			<a href="/import" class="btn btn-primary btn-sm">Create Collection</a>
+			<a href="/import" class="btn btn-secondary btn-sm">Create Collection</a>
 		{/if}
 	</div>
 
@@ -190,7 +190,7 @@
 			{/if}
 		</p>
 
-		<div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
+		<div class="grid grid-cols-2 gap-4 tablet:grid-cols-3 large:grid-cols-4">
 			{#each collections as collection (collection.id)}
 				{@const cp = progressMap.get(collection.id)}
 				<a href="/collections/{collection.id}">

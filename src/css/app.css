@@ -3,3 +3,8 @@
 @plugin "daisyui" {
 	themes: fantasy --default, dracula --prefersdark;
 }
+
+@theme inline {
+	--breakpoint-tablet: 480px;
+	--breakpoint-large: 1200px;
+}

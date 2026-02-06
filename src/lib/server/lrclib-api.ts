@@ -71,7 +71,8 @@ export async function fetchLrcLibLyrics(
 
 		return { parsed, rawSyncedLrc };
 	} catch (error) {
-		console.error('LRCLIB fetch error:', error);
+		const reason = error instanceof Error ? error.message : String(error);
+		console.warn(`LRCLIB: could not fetch lyrics for "${trackName}" — ${reason}`);
 		return { parsed: null, rawSyncedLrc: null };
 	}
 }

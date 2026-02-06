@@ -1,7 +1,4 @@
 <script lang="ts">
-	import type { CollectionItemWithArtists } from '$lib/server/repositories/collection.repository';
-	import CollectionItem from '$components/core/CollectionItem.svelte';
-
 	interface Props {
 		totalTracks: number;
 		enrichedCount: number;
@@ -10,7 +7,6 @@
 		jobCompleted: number;
 		jobFailed: number;
 		currentTrackName: string | null;
-		latestItem: CollectionItemWithArtists | null;
 		onstart: () => void;
 	}
 
@@ -22,7 +18,6 @@
 		jobCompleted,
 		jobFailed,
 		currentTrackName,
-		latestItem,
 		onstart
 	}: Props = $props();
 
@@ -30,13 +25,7 @@
 	let progress = $derived(jobTotal > 0 ? Math.round(((jobCompleted + jobFailed) / jobTotal) * 100) : 0);
 </script>
 
-{#if latestItem}
-	<div class="flex justify-center mb-4">
-		<CollectionItem item={latestItem} />
-	</div>
-{/if}
-
-<div class="border-info rounded-xl border-2 p-4">
+<div class="rounded-xl p-4">
 	{#if status === 'idle' && pendingCount > 0}
 		<div class="flex items-center gap-4">
 			<button class="btn btn-primary" onclick={onstart}>

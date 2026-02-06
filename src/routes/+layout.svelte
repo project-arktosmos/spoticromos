@@ -2,7 +2,7 @@
 	import '../css/app.css';
 	import { onMount } from 'svelte';
 	import { spotifyService } from '$services/spotify.service';
-	import AppMenu from '$components/core/AppMenu.svelte';
+
 	import TopNavbar from '$components/core/TopNavbar.svelte';
 	import ThemeToggle from '$components/core/ThemeToggle.svelte';
 	import AppFooter from '$components/core/AppFooter.svelte';
@@ -23,13 +23,10 @@
 
 <div class="flex min-h-screen flex-col">
 	<TopNavbar user={data.user} />
-	<div class="flex flex-1">
-		<AppMenu />
-		<main class="flex flex-1 flex-col">
-			{@render children?.()}
-			<AppFooter />
-		</main>
-	</div>
+	<main class="mx-auto flex w-full flex-1 flex-col large:max-w-[1200px]">
+		{@render children?.()}
+		<AppFooter />
+	</main>
 </div>
 <ThemeToggle />
 <CookieBanner />

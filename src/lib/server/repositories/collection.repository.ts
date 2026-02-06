@@ -322,6 +322,14 @@ export async function saveCollectionItem(data: {
 	return itemId;
 }
 
+export async function findCollectionTrackIds(collectionId: number): Promise<Set<string>> {
+	const [rows] = await query<(RowDataPacket & { track_spotify_id: string })[]>(
+		'SELECT track_spotify_id FROM collection_items WHERE collection_id = ?',
+		[collectionId]
+	);
+	return new Set(rows.map((r) => r.track_spotify_id));
+}
+
 export async function findCollectionItems(collectionId: number): Promise<CollectionItemRow[]> {
 	const [rows] = await query<CollectionItemDbRow[]>(
 		'SELECT * FROM collection_items WHERE collection_id = ? ORDER BY position ASC, created_at ASC',

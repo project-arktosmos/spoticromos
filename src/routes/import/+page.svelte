@@ -54,30 +54,24 @@
 		await fetchPlaylists();
 	}
 
-	function handleLogout() {
-		spotifyService.logout();
-		goto('/profile');
-	}
+
 </script>
 
-<div class="mx-auto flex min-h-screen max-w-4xl flex-col gap-6 p-8">
+<div class="flex min-h-screen w-full flex-col gap-6 p-4 tablet:p-8">
 	<div class="flex items-center justify-between">
 		<h1 class="text-2xl font-bold">Import</h1>
-		<div class="flex gap-2">
-			<button class="btn btn-outline btn-sm" onclick={refetchPlaylists} disabled={loading}>
-				{#if loading}
-					<span class="loading loading-spinner loading-xs"></span>
-				{/if}
-				Refresh
-			</button>
-			<button class="btn btn-outline btn-sm" onclick={handleLogout}>Logout</button>
-		</div>
+		<button class="btn btn-outline btn-sm" onclick={refetchPlaylists} disabled={loading}>
+			{#if loading}
+				<span class="loading loading-spinner loading-xs"></span>
+			{/if}
+			Refresh
+		</button>
 	</div>
 
 	{#if playlists.length > 0}
 		<p class="text-base-content/70 text-sm">{total} playlists</p>
 
-		<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+		<div class="grid grid-cols-2 gap-4 tablet:grid-cols-3 large:grid-cols-4">
 			{#each playlists as playlist (playlist.id)}
 				{@const imported = importedIds.has(playlist.id)}
 				<a

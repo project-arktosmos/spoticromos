@@ -24,29 +24,15 @@
 	let showTriviaModal = $state(false);
 	let showPairsModal = $state(false);
 	let showClaimModal = $state(false);
+	let showProgressModal = $state(false);
 	let unclaimedRewards = $state(0);
 
-	// Free claim state
-	const FREE_CLAIM_INTERVAL = 600; // 10 minutes in seconds
-	let lastFreeClaim = $state<string | null>(null);
-	let nowSeconds = $state(Math.floor(Date.now() / 1000));
+	// Free claim state — values come from the server (UTC-based) to avoid
+	// timezone drift between the browser clock and the database.
+	let freeClaimable = $state(0);
+	let freeClaimCountdown = $state(0); // seconds until next free claim
 	let freeClaimLoading = $state(false);
 	let freeClaimTimer: ReturnType<typeof setInterval> | null = null;
-
-	let freeClaimable = $derived.by(() => {
-		if (!lastFreeClaim) return 1; // first free claim
-		const lastClaimSec = Math.floor(new Date(lastFreeClaim).getTime() / 1000);
-		const elapsed = nowSeconds - lastClaimSec;
-		return Math.max(0, Math.floor(elapsed / FREE_CLAIM_INTERVAL));
-	});
-
-	let freeClaimCountdown = $derived.by(() => {
-		if (!lastFreeClaim) return 0; // can claim now
-		const lastClaimSec = Math.floor(new Date(lastFreeClaim).getTime() / 1000);
-		const elapsed = nowSeconds - lastClaimSec;
-		const remainder = elapsed % FREE_CLAIM_INTERVAL;
-		return FREE_CLAIM_INTERVAL - remainder;
-	});
 
 	let countdownDisplay = $derived.by(() => {
 		const total = freeClaimCountdown;
@@ -111,7 +97,8 @@
 		stuckItemIds = new Set(json.stuckItemIds ?? []);
 		allRarities = json.rarities ?? [];
 		unclaimedRewards = json.unclaimedRewards ?? 0;
-		lastFreeClaim = json.lastFreeClaim ?? null;
+		freeClaimable = json.freeClaimable ?? 0;
+		freeClaimCountdown = json.freeClaimCountdown ?? 0;
 		const rarityMap = new Map<number, OwnedItemRarity[]>();
 		for (const r of json.ownedItemRarities ?? []) {
 			const list = rarityMap.get(r.collection_item_id) ?? [];
@@ -148,9 +135,15 @@
 			loading = false;
 		}
 
-		// Tick every second for the free claim countdown
+		// Tick every second to decrement the server-provided countdown locally
 		freeClaimTimer = setInterval(() => {
-			nowSeconds = Math.floor(Date.now() / 1000);
+			if (freeClaimCountdown > 0) {
+				freeClaimCountdown -= 1;
+				if (freeClaimCountdown <= 0) {
+					freeClaimCountdown = 0;
+					freeClaimable += 1;
+				}
+			}
 		}, 1000);
 	});
 
@@ -172,7 +165,8 @@
 				throw new Error(err.message ?? `HTTP ${res.status}`);
 			}
 			const result = await res.json();
-			lastFreeClaim = result.lastFreeClaim;
+			freeClaimable = result.freeClaimable;
+			freeClaimCountdown = result.freeClaimCountdown;
 			await refetchCollectionData();
 		} catch (err) {
 			console.error('Failed to claim free rewards:', err);
@@ -291,11 +285,7 @@
 	}
 </script>
 
-<div class="mx-auto flex min-h-screen max-w-6xl flex-col gap-6 p-8">
-	<div class="flex items-center gap-2">
-		<a href="/collections" class="btn btn-ghost btn-sm">&larr; Back</a>
-	</div>
-
+<div class="flex min-h-screen w-full flex-col gap-6 p-4 tablet:p-8">
 	{#if loading}
 		<div class="flex flex-1 items-center justify-center">
 			<span class="loading loading-spinner loading-lg"></span>
@@ -305,10 +295,10 @@
 			<span>{errorMsg}</span>
 		</div>
 	{:else if collection}
-		<div class="grid grid-cols-3 gap-4">
+		<div class="grid grid-cols-1 gap-4 tablet:grid-cols-2 large:grid-cols-3">
 			<CollectionBadge {collection} classes="w-full" progress={completedSlots} progressMax={totalSlots} rarityColor={badgeRarityColor} />
 			{#if data.user && items.length > 0 && allRarities.length > 0}
-				<div class="flex flex-col justify-center gap-2">
+				<div class="hidden flex-col justify-center gap-2 large:order-3 large:flex">
 					{#each rarityProgress as rp}
 						<div class="flex flex-col gap-1 rounded-lg p-2">
 							<div class="flex items-center justify-between">
@@ -320,28 +310,41 @@
 					{/each}
 				</div>
 			{:else}
-				<div class="flex items-center">
+				<div class="hidden items-center large:order-3 large:flex">
 					<p class="text-base-content/50 text-sm">{items.length} tracks</p>
 				</div>
 			{/if}
-			<div class="flex flex-col justify-center gap-2">
-				<button class="btn btn-primary btn-sm" onclick={() => showTriviaModal = true}>Play Trivia</button>
-				<button class="btn btn-secondary btn-sm" onclick={() => showPairsModal = true}>Play Pairs</button>
-				<button class="btn btn-accent btn-sm" disabled={unclaimedRewards === 0} onclick={() => showClaimModal = true}>
-					Claim Rewards{unclaimedRewards > 0 ? ` (${unclaimedRewards})` : ''}
-				</button>
-				{#if data.user}
-					<button
-						class="btn btn-outline btn-accent btn-sm"
-						disabled={freeClaimable < 1 || freeClaimLoading}
-						onclick={claimFreeRewards}
-					>
-						{#if freeClaimLoading}
-							<span class="loading loading-spinner loading-xs"></span>
-						{:else}
-							Free Claim{freeClaimable > 0 ? ` (${freeClaimable})` : ''}
-						{/if}
+			<div class="flex flex-col justify-center gap-2 large:order-2">
+				<a
+					href="https://open.spotify.com/playlist/{collection.spotify_playlist_id}"
+					target="_blank"
+					rel="noopener noreferrer"
+					class="btn btn-outline btn-sm w-full"
+					style="border-color: #1DB954; color: #1DB954;"
+				>
+					Open in Spotify
+				</a>
+				<div class="grid grid-cols-2 gap-2 tablet:grid-cols-1">
+					<button class="btn btn-primary btn-sm" onclick={() => showTriviaModal = true}>Play Trivia</button>
+					<button class="btn btn-secondary btn-sm" onclick={() => showPairsModal = true}>Play Pairs</button>
+					<button class="btn btn-accent btn-sm" disabled={unclaimedRewards === 0} onclick={() => showClaimModal = true}>
+						Claim Rewards{unclaimedRewards > 0 ? ` (${unclaimedRewards})` : ''}
 					</button>
+					{#if data.user}
+						<button
+							class="btn btn-outline btn-accent btn-sm"
+							disabled={freeClaimable < 1 || freeClaimLoading}
+							onclick={claimFreeRewards}
+						>
+							{#if freeClaimLoading}
+								<span class="loading loading-spinner loading-xs"></span>
+							{:else}
+								Free Claim{freeClaimable > 0 ? ` (${freeClaimable})` : ''}
+							{/if}
+						</button>
+					{/if}
+				</div>
+				{#if data.user}
 					<span class="text-base-content/60 text-center text-xs">
 						{#if freeClaimable > 0}
 							{freeClaimable} free reward{freeClaimable > 1 ? 's' : ''} ready
@@ -354,7 +357,7 @@
 		</div>
 
 		{#if items.length > 0}
-			<div class="grid grid-cols-2 gap-4">
+			<div class="grid grid-cols-2 gap-4 large:grid-cols-3">
 				{#each items as item (item.id)}
 					{@const rarities = ownedItemRarities.get(item.id) ?? []}
 					{@const bestRarity = rarities[0] ?? null}
@@ -494,6 +497,27 @@
 					showBackButton={false}
 				/>
 			{/key}
+		</div>
+	</div>
+{/if}
+
+{#if showProgressModal && allRarities.length > 0}
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+	<div class="modal modal-open" onclick={() => showProgressModal = false}>
+		<div class="modal-box max-w-sm" onclick={(e) => e.stopPropagation()}>
+			<button class="btn btn-circle btn-ghost btn-sm absolute top-2 right-2" onclick={() => showProgressModal = false}>&#10005;</button>
+			<h3 class="mb-4 text-lg font-bold">Progress</h3>
+			<div class="flex flex-col gap-2">
+				{#each rarityProgress as rp}
+					<div class="flex flex-col gap-1 rounded-lg p-2">
+						<div class="flex items-center justify-between">
+							<span class="text-xs font-semibold" style="color: {rp.color};">{rp.name}</span>
+							<span class="text-base-content/60 text-[10px]">{rp.owned}/{rp.total}</span>
+						</div>
+						<progress class="progress h-1.5 w-full" style="color: {rp.color};" value={rp.owned} max={rp.total}></progress>
+					</div>
+				{/each}
+			</div>
 		</div>
 	</div>
 {/if}

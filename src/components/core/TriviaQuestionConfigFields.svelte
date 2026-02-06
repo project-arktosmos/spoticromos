@@ -1,6 +1,10 @@
 <script lang="ts">
-	import { TriviaQuestionType } from '$types/trivia.type';
-	import type { TriviaQuestionConfig, ImageDisplayConfig } from '$types/trivia.type';
+	import {
+		TriviaQuestionType,
+		DEFAULT_VERIFICATION_FORMATS,
+		VERIFICATION_PLACEHOLDERS
+	} from '$types/trivia.type';
+	import type { TriviaQuestionConfig, ImageDisplayConfig, VerificationConfig } from '$types/trivia.type';
 
 	interface Props {
 		questionType: TriviaQuestionType;
@@ -15,7 +19,7 @@
 		onchange({ ...config, [field]: value } as TriviaQuestionConfig);
 	}
 
-	function updateImageField(field: keyof ImageDisplayConfig, value: string) {
+	function updateOptionalField(field: keyof ImageDisplayConfig | keyof VerificationConfig, value: string) {
 		if (value === '') {
 			const { [field]: _, ...rest } = config as unknown as Record<string, unknown>;
 			onchange(rest as unknown as TriviaQuestionConfig);
@@ -23,11 +27,6 @@
 			updateField(field, value);
 		}
 	}
-
-	let hasOptionCount = $derived(
-		questionType !== TriviaQuestionType.WhatYearReleased &&
-		questionType !== TriviaQuestionType.OddOneOut
-	);
 
 	let hasSubject = $derived(
 		questionType === TriviaQuestionType.WhichCameFirst ||
@@ -42,24 +41,13 @@
 	);
 
 	let imgConfig = $derived(config as ImageDisplayConfig);
+	let verificationConfig = $derived(config as VerificationConfig);
+	let placeholders = $derived(VERIFICATION_PLACEHOLDERS[questionType] ?? []);
+	let defaultFormat = $derived(DEFAULT_VERIFICATION_FORMATS[questionType] ?? '');
 </script>
 
 <div class={classes}>
 	<div class="flex flex-wrap items-end gap-3">
-		<label class="form-control w-20">
-			<div class="label">
-				<span class="label-text text-xs">Count</span>
-			</div>
-			<input
-				type="number"
-				min="1"
-				max="20"
-				value={(config as { count: number }).count}
-				oninput={(e) => updateField('count', Number((e.target as HTMLInputElement).value) || 1)}
-				class="input input-bordered input-sm w-full"
-			/>
-		</label>
-
 		{#if hasSubject}
 			<label class="form-control w-28">
 				<div class="label">
@@ -73,22 +61,6 @@
 					<option value="song">Song</option>
 					<option value="album">Album</option>
 				</select>
-			</label>
-		{/if}
-
-		{#if hasOptionCount}
-			<label class="form-control w-24">
-				<div class="label">
-					<span class="label-text text-xs">Options</span>
-				</div>
-				<input
-					type="number"
-					min="2"
-					max="6"
-					value={(config as { optionCount: number }).optionCount}
-					oninput={(e) => updateField('optionCount', Number((e.target as HTMLInputElement).value) || 4)}
-					class="input input-bordered input-sm w-full"
-				/>
 			</label>
 		{/if}
 
@@ -114,7 +86,7 @@
 			</div>
 			<select
 				value={imgConfig.showImage ?? ''}
-				onchange={(e) => updateImageField('showImage', (e.target as HTMLSelectElement).value)}
+				onchange={(e) => updateOptionalField('showImage', (e.target as HTMLSelectElement).value)}
 				class="select select-bordered select-sm w-full"
 			>
 				<option value="">Default</option>
@@ -129,7 +101,7 @@
 			</div>
 			<select
 				value={imgConfig.showOptionImages ?? ''}
-				onchange={(e) => updateImageField('showOptionImages', (e.target as HTMLSelectElement).value)}
+				onchange={(e) => updateOptionalField('showOptionImages', (e.target as HTMLSelectElement).value)}
 				class="select select-bordered select-sm w-full"
 			>
 				<option value="">None</option>
@@ -138,4 +110,20 @@
 			</select>
 		</label>
 	</div>
+
+	<label class="form-control mt-3 w-full">
+		<div class="label">
+			<span class="label-text text-xs">Verification format</span>
+			<span class="label-text-alt text-xs text-base-content/50">
+				{placeholders.map(p => `{${p}}`).join(', ')}
+			</span>
+		</div>
+		<input
+			type="text"
+			value={verificationConfig.verificationFormat ?? ''}
+			placeholder={defaultFormat}
+			oninput={(e) => updateOptionalField('verificationFormat', (e.target as HTMLInputElement).value.trim())}
+			class="input input-bordered input-sm w-full"
+		/>
+	</label>
 </div>

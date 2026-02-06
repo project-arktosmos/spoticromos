@@ -2,7 +2,7 @@
 	const lastUpdated = 'February 2026';
 </script>
 
-<div class="mx-auto flex max-w-3xl flex-col gap-6 p-8">
+<div class="flex flex-col gap-6 p-4 tablet:p-8">
 	<h1 class="text-3xl font-bold">Cookie Policy</h1>
 	<p class="text-base-content/60 text-sm">Last updated: {lastUpdated}</p>
 

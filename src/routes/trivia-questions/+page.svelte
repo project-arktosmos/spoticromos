@@ -223,7 +223,7 @@
 	}
 </script>
 
-<div class="mx-auto flex min-h-screen max-w-4xl flex-col gap-6 p-8">
+<div class="flex min-h-screen w-full flex-col gap-6 p-4 tablet:p-8">
 	<div class="flex items-center justify-between">
 		<h1 class="text-2xl font-bold">Trivia Questions</h1>
 		<button class="btn btn-primary btn-sm" onclick={openCreate}>+ New Question</button>

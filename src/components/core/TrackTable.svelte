@@ -37,7 +37,7 @@
 			</tr>
 		</thead>
 		<tbody>
-			{#each items as item, i (item.track?.id ?? i)}
+			{#each items as item, i (i)}
 				<tr
 					class={classNames({
 						'bg-primary/10': highlightIndex === i,

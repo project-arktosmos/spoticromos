@@ -100,7 +100,7 @@
 	});
 </script>
 
-<div class="mx-auto flex min-h-screen max-w-6xl flex-col gap-6 p-8">
+<div class="flex min-h-screen w-full flex-col gap-6 p-4 tablet:p-8">
 	{#if profileUser}
 		<div class="flex items-center gap-2">
 			<a href="/profile/{profileUser.spotify_id}" class="btn btn-ghost btn-sm">&larr; {profileUser.display_name ?? 'Profile'}</a>

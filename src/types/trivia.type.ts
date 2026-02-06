@@ -81,73 +81,49 @@ export function getQuestionTemplateText(
 // ---------------------------------------------------------------------------
 
 export interface WhichCameFirstConfig {
-	count: number;
-	optionCount: number;
 	subject: 'song' | 'album';
 }
 
 export interface WhatYearReleasedConfig {
-	count: number;
 	subject: 'song' | 'album';
 }
 
-export interface WhatAlbumForSongConfig {
-	count: number;
-	optionCount: number;
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface WhatAlbumForSongConfig {}
 
 export interface WhatArtistForTitleConfig {
-	count: number;
 	subject: 'song' | 'album';
-	optionCount: number;
 }
 
-export interface ArtistFirstAlbumConfig {
-	count: number;
-	optionCount: number;
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface ArtistFirstAlbumConfig {}
 
 export interface WhoSangLyricsConfig {
-	count: number;
 	fragmentLength: number;
-	optionCount: number;
 }
 
 export interface WhatLabelReleasedItConfig {
-	count: number;
-	optionCount: number;
 	subject: 'song' | 'album';
 }
 
-export interface FinishTheLyricConfig {
-	count: number;
-	optionCount: number;
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface FinishTheLyricConfig {}
 
 export interface WhatSongFromLyricsConfig {
-	count: number;
-	optionCount: number;
 	fragmentLength: number;
 }
 
-export interface NameTheAlbumFromCoverConfig {
-	count: number;
-	optionCount: number;
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface NameTheAlbumFromCoverConfig {}
 
-export interface OddOneOutConfig {
-	count: number;
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface OddOneOutConfig {}
 
-export interface WhatGenreForArtistConfig {
-	count: number;
-	optionCount: number;
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface WhatGenreForArtistConfig {}
 
-export interface MostFollowedArtistConfig {
-	count: number;
-	optionCount: number;
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface MostFollowedArtistConfig {}
 
 // ---------------------------------------------------------------------------
 // Image display config (common to all question types)
@@ -158,6 +134,15 @@ export interface ImageDisplayConfig {
 	showImage?: 'artist' | 'album';
 	/** Show album/artist images on all answer options */
 	showOptionImages?: 'artist' | 'album';
+}
+
+// ---------------------------------------------------------------------------
+// Verification format config (common to all question types)
+// ---------------------------------------------------------------------------
+
+export interface VerificationConfig {
+	/** Custom format string for the verification text shown after answering. Uses {placeholder} syntax. */
+	verificationFormat?: string;
 }
 
 export type TriviaQuestionConfig = (
@@ -174,26 +159,62 @@ export type TriviaQuestionConfig = (
 	| OddOneOutConfig
 	| WhatGenreForArtistConfig
 	| MostFollowedArtistConfig
-) & ImageDisplayConfig;
+) & ImageDisplayConfig & VerificationConfig;
 
 // ---------------------------------------------------------------------------
 // Default configs per question type
 // ---------------------------------------------------------------------------
 
 export const DEFAULT_CONFIGS: Record<TriviaQuestionType, TriviaQuestionConfig> = {
-	[TriviaQuestionType.WhichCameFirst]: { count: 1, optionCount: 4, subject: 'song' },
-	[TriviaQuestionType.WhatYearReleased]: { count: 1, subject: 'song' },
-	[TriviaQuestionType.WhatAlbumForSong]: { count: 1, optionCount: 4 },
-	[TriviaQuestionType.WhatArtistForTitle]: { count: 1, subject: 'song', optionCount: 4 },
-	[TriviaQuestionType.ArtistFirstAlbum]: { count: 1, optionCount: 4 },
-	[TriviaQuestionType.WhoSangLyrics]: { count: 1, fragmentLength: 8, optionCount: 4 },
-	[TriviaQuestionType.WhatLabelReleasedIt]: { count: 1, optionCount: 4, subject: 'song' },
-	[TriviaQuestionType.FinishTheLyric]: { count: 1, optionCount: 4 },
-	[TriviaQuestionType.WhatSongFromLyrics]: { count: 1, optionCount: 4, fragmentLength: 8 },
-	[TriviaQuestionType.NameTheAlbumFromCover]: { count: 1, optionCount: 4 },
-	[TriviaQuestionType.OddOneOut]: { count: 1 },
-	[TriviaQuestionType.WhatGenreForArtist]: { count: 1, optionCount: 4 },
-	[TriviaQuestionType.MostFollowedArtist]: { count: 1, optionCount: 4 }
+	[TriviaQuestionType.WhichCameFirst]: { subject: 'song' },
+	[TriviaQuestionType.WhatYearReleased]: { subject: 'song' },
+	[TriviaQuestionType.WhatAlbumForSong]: {},
+	[TriviaQuestionType.WhatArtistForTitle]: { subject: 'song' },
+	[TriviaQuestionType.ArtistFirstAlbum]: {},
+	[TriviaQuestionType.WhoSangLyrics]: { fragmentLength: 8 },
+	[TriviaQuestionType.WhatLabelReleasedIt]: { subject: 'song' },
+	[TriviaQuestionType.FinishTheLyric]: {},
+	[TriviaQuestionType.WhatSongFromLyrics]: { fragmentLength: 8 },
+	[TriviaQuestionType.NameTheAlbumFromCover]: {},
+	[TriviaQuestionType.OddOneOut]: {},
+	[TriviaQuestionType.WhatGenreForArtist]: {},
+	[TriviaQuestionType.MostFollowedArtist]: {}
+};
+
+// ---------------------------------------------------------------------------
+// Default verification formats and available placeholders per question type
+// ---------------------------------------------------------------------------
+
+export const DEFAULT_VERIFICATION_FORMATS: Record<TriviaQuestionType, string> = {
+	[TriviaQuestionType.WhichCameFirst]: 'Released in {year}',
+	[TriviaQuestionType.WhatYearReleased]: '"{track}" by {artist}',
+	[TriviaQuestionType.WhatAlbumForSong]: '"{track}" is on "{album}" ({year})',
+	[TriviaQuestionType.WhatArtistForTitle]: 'Performed "{track}"',
+	[TriviaQuestionType.ArtistFirstAlbum]: 'Released in {year}',
+	[TriviaQuestionType.WhoSangLyrics]: 'From "{track}"',
+	[TriviaQuestionType.WhatLabelReleasedIt]: '"{track}" was released on {label}',
+	[TriviaQuestionType.FinishTheLyric]: 'From "{track}" by {artist}',
+	[TriviaQuestionType.WhatSongFromLyrics]: 'By {artist}',
+	[TriviaQuestionType.NameTheAlbumFromCover]: 'By {artist}',
+	[TriviaQuestionType.OddOneOut]: 'From "{oddAlbum}" (others from "{mainAlbum}")',
+	[TriviaQuestionType.WhatGenreForArtist]: "{artist}'s genre",
+	[TriviaQuestionType.MostFollowedArtist]: '{followers} followers'
+};
+
+export const VERIFICATION_PLACEHOLDERS: Record<TriviaQuestionType, string[]> = {
+	[TriviaQuestionType.WhichCameFirst]: ['year'],
+	[TriviaQuestionType.WhatYearReleased]: ['track', 'artist'],
+	[TriviaQuestionType.WhatAlbumForSong]: ['track', 'album', 'year'],
+	[TriviaQuestionType.WhatArtistForTitle]: ['track'],
+	[TriviaQuestionType.ArtistFirstAlbum]: ['year'],
+	[TriviaQuestionType.WhoSangLyrics]: ['track'],
+	[TriviaQuestionType.WhatLabelReleasedIt]: ['track', 'label'],
+	[TriviaQuestionType.FinishTheLyric]: ['track', 'artist'],
+	[TriviaQuestionType.WhatSongFromLyrics]: ['artist'],
+	[TriviaQuestionType.NameTheAlbumFromCover]: ['artist'],
+	[TriviaQuestionType.OddOneOut]: ['oddAlbum', 'mainAlbum'],
+	[TriviaQuestionType.WhatGenreForArtist]: ['artist'],
+	[TriviaQuestionType.MostFollowedArtist]: ['followers']
 };
 
 // ---------------------------------------------------------------------------

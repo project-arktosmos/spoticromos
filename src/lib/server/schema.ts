@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS tracks (
   is_local     BOOLEAN       NOT NULL DEFAULT FALSE,
   popularity   SMALLINT      DEFAULT NULL,
   preview_url  TEXT          DEFAULT NULL,
-  isrc         VARCHAR(12)   DEFAULT NULL,
+  isrc         VARCHAR(20)   DEFAULT NULL,
   album_id     VARCHAR(22)   DEFAULT NULL,
   spotify_uri  VARCHAR(100)  NOT NULL,
   spotify_url  TEXT          NOT NULL,
@@ -466,6 +466,16 @@ async function migrateTriviaToFlat(): Promise<void> {
 	await execute('DROP TABLE IF EXISTS trivia_templates');
 }
 
+async function widenIsrcColumn(): Promise<void> {
+	const [rows] = await query<(RowDataPacket & { CHARACTER_MAXIMUM_LENGTH: number })[]>(
+		`SELECT CHARACTER_MAXIMUM_LENGTH FROM INFORMATION_SCHEMA.COLUMNS
+		 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tracks' AND COLUMN_NAME = 'isrc'`
+	);
+	if (rows.length > 0 && rows[0].CHARACTER_MAXIMUM_LENGTH < 20) {
+		await execute('ALTER TABLE tracks MODIFY COLUMN isrc VARCHAR(20) DEFAULT NULL');
+	}
+}
+
 export async function initializeSchema(): Promise<void> {
 	if (initialized) return;
 
@@ -485,6 +495,7 @@ export async function initializeSchema(): Promise<void> {
 	await migrateCollectionCreators();
 	await migrateRarities();
 	await migrateTriviaToFlat();
+	await widenIsrcColumn();
 
 	initialized = true;
 }

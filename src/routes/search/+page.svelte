@@ -60,7 +60,7 @@
 	}
 </script>
 
-<div class="mx-auto flex min-h-screen max-w-4xl flex-col gap-6 p-8">
+<div class="flex min-h-screen w-full flex-col gap-6 p-4 tablet:p-8">
 	<h1 class="text-2xl font-bold">Search Playlists</h1>
 
 	<form onsubmit={handleSubmit} class="flex gap-2">

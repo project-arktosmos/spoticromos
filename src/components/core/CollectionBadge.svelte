@@ -1,8 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { browser } from '$app/environment';
 	import classNames from 'classnames';
-	import bwipjs from 'bwip-js';
 	import type { CollectionRow } from '$lib/server/repositories/collection.repository';
 
 	interface Props {
@@ -25,7 +22,7 @@
 	});
 
 	let computedClasses = $derived(classNames(
-		'relative flex w-full flex-row overflow-hidden rounded-lg border-2 transition-all duration-300',
+		'relative flex w-full flex-col overflow-hidden rounded-lg border-2 transition-all duration-300',
 		{ 'bg-base-300': !rarityColor },
 		{ 'border-base-300': !rarityColor },
 		classes
@@ -41,51 +38,9 @@
 		{ 'grayscale': !owned }
 	));
 
-	let barcodeCanvas = $state<HTMLCanvasElement | null>(null);
-
-	function renderBarcode() {
-		if (!browser || !barcodeCanvas) return;
-		const url = `${window.location.origin}/collections/${collection.id}`;
-		try {
-			const tempCanvas = document.createElement('canvas');
-			bwipjs.toCanvas(tempCanvas, {
-				bcid: 'pdf417',
-				text: url,
-				scale: 2,
-				columns: 5,
-				rowmult: 3,
-				padding: 4
-			} as Parameters<typeof bwipjs.toCanvas>[1]);
-			// Draw rotated -90° onto the visible canvas
-			const w = tempCanvas.width;
-			const h = tempCanvas.height;
-			barcodeCanvas.width = h;
-			barcodeCanvas.height = w;
-			const ctx = barcodeCanvas.getContext('2d')!;
-			ctx.translate(0, w);
-			ctx.rotate(-Math.PI / 2);
-			ctx.drawImage(tempCanvas, 0, 0);
-		} catch (err) {
-			console.error('Failed to render PDF417 barcode:', err);
-		}
-	}
-
-	onMount(() => {
-		renderBarcode();
-	});
-
-	$effect(() => {
-		collection.id;
-		renderBarcode();
-	});
 </script>
 
 <div class={computedClasses} style={cardStyle()}>
-	<!-- PDF417 barcode (vertical strip) -->
-	<div class="flex shrink-0 items-center justify-center bg-white px-1">
-		<canvas bind:this={barcodeCanvas}></canvas>
-	</div>
-
 	<div class={contentClasses}>
 		<!-- Collection name -->
 		<div class="flex items-center justify-center p-2">

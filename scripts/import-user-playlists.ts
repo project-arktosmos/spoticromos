@@ -11,7 +11,7 @@
 
 import { initializeSchema } from '$lib/server/schema';
 import { spotifyFetch } from '$lib/server/spotify-api';
-import { findCollectionByPlaylistId } from '$lib/server/repositories/collection.repository';
+import { findCollectionByPlaylistId, findCollectionTrackIds } from '$lib/server/repositories/collection.repository';
 import { resolveToken, importPlaylist, type ImportResult } from './lib/import-core';
 import type { SpotifyPlaylist, SpotifyPaginatedResponse } from '$types/spotify.type';
 
@@ -126,38 +126,69 @@ async function main() {
 		console.log(`  ${i + 1}. ${playlists[i].name} (${playlists[i].trackCount} tracks)`);
 	}
 
-	// Check which playlists already exist in the DB
-	const existing = new Set<string>();
+	// Check which playlists already exist in the DB and whether they're complete
+	interface PlaylistAction {
+		playlist: PlaylistSummary;
+		action: 'new' | 'resume' | 'skip';
+		collectionId?: number;
+	}
+
+	const actions: PlaylistAction[] = [];
+	let skipCount = 0;
+
 	for (const pl of playlists) {
 		const row = await findCollectionByPlaylistId(pl.id);
-		if (row) existing.add(pl.id);
+		if (!row) {
+			actions.push({ playlist: pl, action: 'new' });
+		} else {
+			const enrichedIds = await findCollectionTrackIds(row.id);
+			if (enrichedIds.size >= pl.trackCount) {
+				skipCount++;
+				actions.push({ playlist: pl, action: 'skip' });
+			} else {
+				console.log(
+					`  "${pl.name}" is incomplete (${enrichedIds.size}/${pl.trackCount} tracks) — will resume`
+				);
+				actions.push({ playlist: pl, action: 'resume', collectionId: row.id });
+			}
+		}
 	}
 
-	const toImport = playlists.filter((pl) => !existing.has(pl.id));
+	const toProcess = actions.filter((a) => a.action !== 'skip');
 
-	if (existing.size > 0) {
-		console.log(`\nSkipping ${existing.size} already-imported playlists.`);
+	if (skipCount > 0) {
+		console.log(`\nSkipping ${skipCount} fully-imported playlists.`);
 	}
 
-	if (toImport.length === 0) {
+	if (toProcess.length === 0) {
 		console.log('All playlists already imported — nothing to do.');
 		process.exit(0);
 	}
 
-	console.log(`Importing ${toImport.length} new playlists...\n`);
+	const newCount = toProcess.filter((a) => a.action === 'new').length;
+	const resumeCount = toProcess.filter((a) => a.action === 'resume').length;
+	console.log(
+		`\nProcessing ${toProcess.length} playlists (${newCount} new, ${resumeCount} to resume)...\n`
+	);
 
-	// Import each new playlist
+	// Import / resume each playlist
 	const results: (ImportResult | null)[] = [];
 	let totalEnriched = 0;
 	let totalFailed = 0;
 
-	for (let i = 0; i < toImport.length; i++) {
-		const pl = toImport[i];
+	for (let i = 0; i < toProcess.length; i++) {
+		const { playlist: pl, action, collectionId } = toProcess[i];
 		console.log(`${'='.repeat(60)}`);
-		console.log(`[${i + 1}/${toImport.length}] Importing: ${pl.name}`);
+		console.log(
+			`[${i + 1}/${toProcess.length}] ${action === 'resume' ? 'Resuming' : 'Importing'}: ${pl.name}`
+		);
 		console.log('='.repeat(60));
 
-		const result = await importPlaylist(pl.id, handle);
+		const result = await importPlaylist(
+			pl.id,
+			handle,
+			action === 'resume' ? collectionId : undefined
+		);
 		results.push(result);
 
 		if (result) {
@@ -173,7 +204,7 @@ async function main() {
 	console.log(`\n${'='.repeat(60)}`);
 	console.log('SUMMARY');
 	console.log('='.repeat(60));
-	console.log(`Playlists  : ${succeeded} imported, ${failed} failed, ${existing.size} skipped`);
+	console.log(`Playlists  : ${succeeded} processed, ${failed} failed, ${skipCount} skipped`);
 	console.log(`Tracks     : ${totalEnriched} enriched, ${totalFailed} failed`);
 	console.log('='.repeat(60));
 

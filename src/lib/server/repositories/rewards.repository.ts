@@ -89,20 +89,58 @@ function pickWeightedRarity(rarities: RarityRow[]): RarityRow {
 
 const FREE_CLAIM_INTERVAL_SECONDS = 600; // 10 minutes
 
+/**
+ * Compute how many free claims a user has available, and how many seconds
+ * remain until the next one.  All arithmetic is done inside MySQL using
+ * UTC_TIMESTAMP() so there is no client/server timezone mismatch.
+ */
+export async function getFreeclaimInfo(
+	userSpotifyId: string,
+	collectionId: number
+): Promise<{ freeClaimable: number; freeClaimCountdown: number }> {
+	const [rows] = await query<
+		(RowDataPacket & { last_free_claim: Date | null; elapsed_seconds: number | null })[]
+	>(
+		`SELECT last_free_claim,
+		        TIMESTAMPDIFF(SECOND, last_free_claim, UTC_TIMESTAMP()) AS elapsed_seconds
+		 FROM user_collections
+		 WHERE user_spotify_id = ? AND collection_id = ?`,
+		[userSpotifyId, collectionId]
+	);
+
+	if (rows.length === 0) {
+		return { freeClaimable: 0, freeClaimCountdown: 0 };
+	}
+
+	const lastClaim = rows[0].last_free_claim;
+	const elapsedSeconds = rows[0].elapsed_seconds ?? 0;
+
+	if (!lastClaim) {
+		return { freeClaimable: 1, freeClaimCountdown: 0 };
+	}
+
+	const claimable = Math.floor(elapsedSeconds / FREE_CLAIM_INTERVAL_SECONDS);
+	if (claimable >= 1) {
+		return { freeClaimable: claimable, freeClaimCountdown: 0 };
+	}
+
+	const remainder = elapsedSeconds % FREE_CLAIM_INTERVAL_SECONDS;
+	return { freeClaimable: 0, freeClaimCountdown: FREE_CLAIM_INTERVAL_SECONDS - remainder };
+}
+
 export async function claimFreeRewards(
 	userSpotifyId: string,
 	collectionId: number
-): Promise<{ claimed: number; lastFreeClaim: string }> {
+): Promise<{ claimed: number; freeClaimable: number; freeClaimCountdown: number }> {
 	const conn = await getPool().getConnection();
 	try {
 		await conn.beginTransaction();
 
-		// Use TIMESTAMPDIFF for elapsed calculation so MySQL handles timezones internally
 		const [rows] = await conn.query<
 			(RowDataPacket & { last_free_claim: Date | null; elapsed_seconds: number | null })[]
 		>(
 			`SELECT last_free_claim,
-			        TIMESTAMPDIFF(SECOND, last_free_claim, NOW()) AS elapsed_seconds
+			        TIMESTAMPDIFF(SECOND, last_free_claim, UTC_TIMESTAMP()) AS elapsed_seconds
 			 FROM user_collections
 			 WHERE user_spotify_id = ? AND collection_id = ?
 			 FOR UPDATE`,
@@ -124,7 +162,7 @@ export async function claimFreeRewards(
 			await conn.execute(
 				`UPDATE user_collections
 				 SET unclaimed_rewards = unclaimed_rewards + 1,
-				     last_free_claim = NOW()
+				     last_free_claim = UTC_TIMESTAMP()
 				 WHERE user_spotify_id = ? AND collection_id = ?`,
 				[userSpotifyId, collectionId]
 			);
@@ -145,19 +183,26 @@ export async function claimFreeRewards(
 			);
 		}
 
-		// Read back the updated timestamp so we return the canonical value
+		// Compute remaining free-claim info after the update
 		const [updated] = await conn.query<
-			(RowDataPacket & { last_free_claim: Date })[]
+			(RowDataPacket & { elapsed_seconds: number | null })[]
 		>(
-			`SELECT last_free_claim FROM user_collections
+			`SELECT TIMESTAMPDIFF(SECOND, last_free_claim, UTC_TIMESTAMP()) AS elapsed_seconds
+			 FROM user_collections
 			 WHERE user_spotify_id = ? AND collection_id = ?`,
 			[userSpotifyId, collectionId]
 		);
 
 		await conn.commit();
+
+		const newElapsed = updated[0].elapsed_seconds ?? 0;
+		const newClaimable = Math.floor(newElapsed / FREE_CLAIM_INTERVAL_SECONDS);
+		const remainder = newElapsed % FREE_CLAIM_INTERVAL_SECONDS;
+
 		return {
 			claimed: claimable,
-			lastFreeClaim: new Date(updated[0].last_free_claim).toISOString()
+			freeClaimable: newClaimable,
+			freeClaimCountdown: newClaimable >= 1 ? 0 : FREE_CLAIM_INTERVAL_SECONDS - remainder
 		};
 	} catch (err) {
 		await conn.rollback();

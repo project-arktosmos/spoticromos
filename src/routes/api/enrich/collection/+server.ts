@@ -3,7 +3,7 @@ import { getClientToken } from '$lib/server/spotify-token';
 import { startJob, getJob } from '$lib/server/enrichment-jobs';
 import type { RequestHandler } from './$types';
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, locals }) => {
 	let body: unknown;
 	try {
 		body = await request.json();
@@ -27,7 +27,8 @@ export const POST: RequestHandler = async ({ request }) => {
 	const userToken = request.headers.get('X-Spotify-Token');
 	const token = userToken || (await getClientToken());
 
-	const job = startJob(collectionId, tracks, token);
+	const userSpotifyId = locals.user?.spotifyId;
+	const job = startJob(collectionId, tracks, token, userSpotifyId);
 
 	return json({
 		status: job.status,

@@ -7,8 +7,8 @@
 
 import { getClientToken, refreshUserToken } from '$lib/server/spotify-token';
 import { spotifyFetch } from '$lib/server/spotify-api';
-import { fetchPlaylistFromEmbed } from '$lib/server/spotify-embed';
-import { saveCollection } from '$lib/server/repositories/collection.repository';
+import { fetchPlaylistFromEmbed, fetchAllTrackIdsFromSpclient } from '$lib/server/spotify-embed';
+import { saveCollection, findCollectionTrackIds } from '$lib/server/repositories/collection.repository';
 import { ensureUserExists, findUserBySpotifyId, updateUserTokens } from '$lib/server/repositories/user.repository';
 import { enrichTrack } from '$lib/server/enrichment';
 import type { SpotifyPlaylist, SpotifyTrack, SpotifyPaginatedResponse } from '$types/spotify.type';
@@ -128,23 +128,61 @@ export async function fetchPlaylistViaEmbed(
 	token: string
 ): Promise<PlaylistData | null> {
 	const embed = await fetchPlaylistFromEmbed(playlistId);
-	if (!embed || embed.trackList.length === 0) return null;
+	if (!embed) return null;
 
-	if (embed.trackList.length === 100) {
-		console.warn(
-			'  ⚠ Embed returned exactly 100 tracks — playlist may have more that were truncated.'
-		);
+	// Resolve the full track ID list.
+	// The embed page itself only contains up to 100 tracks, but the anonymous
+	// token lets us call spclient which returns *all* track URIs.
+	let trackIds: string[];
+
+	if (embed.anonymousToken) {
+		console.log('  Fetching complete track list via spclient...');
+		const spclientIds = await fetchAllTrackIdsFromSpclient(playlistId, embed.anonymousToken);
+
+		if (spclientIds.length > 0) {
+			trackIds = spclientIds;
+			console.log(`  spclient returned ${trackIds.length} tracks`);
+		} else {
+			// spclient failed — fall back to the (possibly truncated) embed list
+			console.warn('  spclient returned no tracks, falling back to embed trackList');
+			trackIds = embed.trackList.map((t) => t.id);
+		}
+	} else {
+		trackIds = embed.trackList.map((t) => t.id);
 	}
 
-	console.log(`  Fetching full track data for ${embed.trackList.length} tracks...`);
+	if (trackIds.length === 0) return null;
 
+	// Use the anonymous embed token for batch track resolution when available,
+	// otherwise fall back to the caller-supplied token.
+	const resolveToken = embed.anonymousToken ?? token;
+
+	// Batch-resolve track IDs via /v1/tracks?ids=... (max 50 per request)
+	console.log(`  Resolving full track data for ${trackIds.length} tracks...`);
 	const tracks: SpotifyTrack[] = [];
-	for (const et of embed.trackList) {
+	const BATCH_SIZE = 50;
+
+	for (let i = 0; i < trackIds.length; i += BATCH_SIZE) {
+		const batch = trackIds.slice(i, i + BATCH_SIZE);
 		try {
-			const track = await spotifyFetch<SpotifyTrack>(`/tracks/${et.id}`, token);
-			tracks.push(track);
+			const result = await spotifyFetch<{ tracks: (SpotifyTrack | null)[] }>(
+				`/tracks?ids=${batch.join(',')}`,
+				resolveToken
+			);
+			for (const track of result.tracks) {
+				if (track) tracks.push(track);
+			}
 		} catch (err) {
-			console.error(`  Could not fetch track ${et.id} (${et.title}): ${err instanceof Error ? err.message : err}`);
+			// If batch fails, try tracks individually
+			console.warn(`  Batch ${i / BATCH_SIZE + 1} failed, trying individually: ${err instanceof Error ? err.message : err}`);
+			for (const id of batch) {
+				try {
+					const track = await spotifyFetch<SpotifyTrack>(`/tracks/${id}`, resolveToken);
+					tracks.push(track);
+				} catch (innerErr) {
+					console.error(`  Could not fetch track ${id}: ${innerErr instanceof Error ? innerErr.message : innerErr}`);
+				}
+			}
 		}
 	}
 
@@ -180,13 +218,21 @@ export interface ImportResult {
 	collectionId: number;
 	name: string;
 	completed: number;
+	skipped: number;
 	failed: number;
 	total: number;
 }
 
+/**
+ * Import (or resume) a playlist.
+ *
+ * When `existingCollectionId` is provided the function skips collection
+ * creation and only enriches tracks that are missing from `collection_items`.
+ */
 export async function importPlaylist(
 	playlistId: string,
-	handle: TokenHandle
+	handle: TokenHandle,
+	existingCollectionId?: number
 ): Promise<ImportResult | null> {
 	const { token, getToken } = handle;
 
@@ -201,29 +247,44 @@ export async function importPlaylist(
 	console.log(`  Owner    : ${data.ownerName ?? 'unknown'}`);
 	console.log(`  Tracks   : ${data.tracks.length}`);
 
-	// Save collection
-	if (data.ownerId) {
-		await ensureUserExists({
-			spotifyId: data.ownerId,
-			displayName: data.ownerName
+	let collectionId: number;
+
+	if (existingCollectionId != null) {
+		collectionId = existingCollectionId;
+		console.log(`  Resuming existing collection (id: ${collectionId})`);
+	} else {
+		if (data.ownerId) {
+			await ensureUserExists({
+				spotifyId: data.ownerId,
+				displayName: data.ownerName
+			});
+		}
+
+		collectionId = await saveCollection({
+			name: data.name,
+			coverImageUrl: data.coverImageUrl,
+			spotifyPlaylistId: data.playlistId,
+			spotifyOwnerId: data.ownerId
 		});
+
+		console.log(`  Collection saved (id: ${collectionId})`);
 	}
 
-	const collectionId = await saveCollection({
-		name: data.name,
-		coverImageUrl: data.coverImageUrl,
-		spotifyPlaylistId: data.playlistId,
-		spotifyOwnerId: data.ownerId
-	});
-
-	console.log(`  Collection saved (id: ${collectionId})`);
+	// Determine which tracks are already enriched
+	const existingTrackIds = await findCollectionTrackIds(collectionId);
 
 	// Enrich tracks
 	let completed = 0;
+	let skipped = 0;
 	let failed = 0;
 
 	for (let i = 0; i < data.tracks.length; i++) {
 		const track = data.tracks[i];
+
+		if (existingTrackIds.has(track.id)) {
+			skipped++;
+			continue;
+		}
 
 		try {
 			let currentToken: string;
@@ -246,5 +307,9 @@ export async function importPlaylist(
 		}
 	}
 
-	return { collectionId, name: data.name, completed, failed, total: data.tracks.length };
+	if (skipped > 0) {
+		console.log(`  Skipped ${skipped} already-enriched tracks`);
+	}
+
+	return { collectionId, name: data.name, completed, skipped, failed, total: data.tracks.length };
 }

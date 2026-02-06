@@ -3,6 +3,8 @@ import type { CollectionItemWithArtists } from '$lib/server/repositories/collect
 import { enrichTrack } from '$lib/server/enrichment';
 import { getClientToken } from '$lib/server/spotify-token';
 import { initializeSchema } from '$lib/server/schema';
+import { addUserCollection } from '$lib/server/repositories/ownership.repository';
+import { addRewards } from '$lib/server/repositories/rewards.repository';
 
 export interface EnrichmentJob {
 	collectionId: number;
@@ -30,7 +32,8 @@ export function getJob(collectionId: number): EnrichmentJob | null {
 export function startJob(
 	collectionId: number,
 	tracks: TrackEntry[],
-	token: string
+	token: string,
+	userSpotifyId?: string
 ): EnrichmentJob {
 	const existing = jobs.get(collectionId);
 	if (existing && existing.status === 'running') return existing;
@@ -50,7 +53,7 @@ export function startJob(
 	jobs.set(collectionId, job);
 
 	// Fire-and-forget — runs independently of the HTTP request
-	processJob(job, tracks, token).catch((err) => {
+	processJob(job, tracks, token, userSpotifyId).catch((err) => {
 		console.error(`Enrichment job for collection ${collectionId} crashed:`, err);
 		job.status = 'done';
 	});
@@ -58,7 +61,7 @@ export function startJob(
 	return job;
 }
 
-async function processJob(job: EnrichmentJob, tracks: TrackEntry[], initialToken: string) {
+async function processJob(job: EnrichmentJob, tracks: TrackEntry[], initialToken: string, userSpotifyId?: string) {
 	await initializeSchema();
 
 	for (let i = 0; i < tracks.length; i++) {
@@ -108,4 +111,14 @@ async function processJob(job: EnrichmentJob, tracks: TrackEntry[], initialToken
 	job.currentTrackId = null;
 	job.currentPosition = -1;
 	job.status = 'done';
+
+	// Grant +10 claimable rewards for completing the import
+	if (userSpotifyId && job.completed > 0) {
+		try {
+			await addUserCollection(userSpotifyId, job.collectionId);
+			await addRewards(userSpotifyId, job.collectionId, 10);
+		} catch (err) {
+			console.error(`Failed to grant rewards for collection ${job.collectionId}:`, err);
+		}
+	}
 }
