@@ -1,12 +1,16 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type { CollectionRow } from '$lib/server/repositories/collection.repository';
+	import CollectionBadge from '$components/core/CollectionBadge.svelte';
 
 	interface CollectionWithCount extends CollectionRow {
 		track_count: number;
 	}
 
+	let { data } = $props();
+
 	let collections = $state<CollectionWithCount[]>([]);
+	let ownedIds = $state<Set<number>>(new Set());
 	let loading = $state(true);
 	let errorMsg = $state('');
 
@@ -14,14 +18,36 @@
 		try {
 			const res = await fetch('/api/collections');
 			if (!res.ok) throw new Error(`HTTP ${res.status}`);
-			const data = await res.json();
-			collections = data.collections;
+			const json = await res.json();
+			collections = json.collections;
+			ownedIds = new Set(json.ownedCollectionIds ?? []);
 		} catch (err) {
 			errorMsg = err instanceof Error ? err.message : 'Failed to load collections';
 		} finally {
 			loading = false;
 		}
 	});
+
+	async function toggleOwnership(e: Event, collectionId: number) {
+		e.preventDefault();
+		e.stopPropagation();
+		if (!data.user) return;
+		const isOwned = ownedIds.has(collectionId);
+		const method = isOwned ? 'DELETE' : 'POST';
+		try {
+			const res = await fetch(`/api/collections/${collectionId}/own`, { method });
+			if (!res.ok) throw new Error(`HTTP ${res.status}`);
+			const next = new Set(ownedIds);
+			if (isOwned) {
+				next.delete(collectionId);
+			} else {
+				next.add(collectionId);
+			}
+			ownedIds = next;
+		} catch (err) {
+			console.error('Failed to toggle ownership:', err);
+		}
+	}
 </script>
 
 <div class="mx-auto flex min-h-screen max-w-4xl flex-col gap-6 p-8">
@@ -40,37 +66,10 @@
 	{:else}
 		<p class="text-base-content/70 text-sm">{collections.length} collections</p>
 
-		<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+		<div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
 			{#each collections as collection (collection.id)}
-				<a href="/collections/{collection.id}" class="card bg-base-200 shadow-sm transition-shadow hover:shadow-md">
-					{#if collection.cover_image_url}
-						<figure>
-							<img
-								src={collection.cover_image_url}
-								alt={collection.name}
-								class="aspect-square w-full object-cover"
-							/>
-						</figure>
-					{:else}
-						<figure>
-							<div
-								class="bg-base-300 flex aspect-square w-full items-center justify-center"
-							>
-								<span class="text-base-content/30 text-4xl">♫</span>
-							</div>
-						</figure>
-					{/if}
-					<div class="card-body p-4">
-						<h2 class="card-title text-base">{collection.name}</h2>
-						<p class="text-base-content/60 text-sm">
-							{collection.track_count} tracks
-						</p>
-						{#if collection.creator_name}
-							<p class="text-base-content/50 text-xs">
-								by {collection.creator_name}
-							</p>
-						{/if}
-					</div>
+				<a href="/collections/{collection.id}">
+					<CollectionBadge {collection} owned={!data.user || ownedIds.has(collection.id)} />
 				</a>
 			{/each}
 		</div>

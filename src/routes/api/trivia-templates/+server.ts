@@ -2,17 +2,24 @@ import { json, error } from '@sveltejs/kit';
 import { initializeSchema } from '$lib/server/schema';
 import {
 	findAllTemplates,
+	findAllTemplatesWithQuestions,
 	createTemplate,
 	findTemplateById,
 	findTemplateQuestions,
 	replaceTemplateQuestions
 } from '$lib/server/repositories/trivia.repository';
+import { validateQuestions } from '$lib/server/trivia-validation';
 import type { RequestHandler } from './$types';
 import type { CreateTriviaTemplatePayload } from '$types/trivia.type';
 
-export const GET: RequestHandler = async () => {
+export const GET: RequestHandler = async ({ url }) => {
 	try {
 		await initializeSchema();
+		const expand = url.searchParams.get('expand');
+		if (expand === 'questions') {
+			const templates = await findAllTemplatesWithQuestions();
+			return json({ templates });
+		}
 		const templates = await findAllTemplates();
 		return json({ templates });
 	} catch (err) {
@@ -38,6 +45,11 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	if (!Array.isArray(questions) || questions.length === 0) {
 		return error(400, 'At least one question is required');
+	}
+
+	const validationError = validateQuestions(questions);
+	if (validationError) {
+		return error(400, validationError);
 	}
 
 	try {

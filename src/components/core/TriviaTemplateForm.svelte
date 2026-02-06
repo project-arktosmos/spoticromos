@@ -30,10 +30,15 @@
 
 	let name = $state(template?.name ?? '');
 	let description = $state(template?.description ?? '');
+	// When creating a new template, default to all 6 question types
+	const ALL_QUESTION_TYPE_DEFAULTS: QuestionDraft[] = Object.values(TriviaQuestionType).map(
+		(type) => ({ question_type: type, config: { ...DEFAULT_CONFIGS[type] } })
+	);
+
 	let drafts = $state<QuestionDraft[]>(
 		questions.length > 0
 			? questions.map((q) => ({ question_type: q.question_type, config: { ...q.config } }))
-			: [{ question_type: TriviaQuestionType.WhichCameFirst, config: { ...DEFAULT_CONFIGS[TriviaQuestionType.WhichCameFirst] } }]
+			: ALL_QUESTION_TYPE_DEFAULTS.map((d) => ({ ...d, config: { ...d.config } }))
 	);
 
 	let isValid = $derived(name.trim().length > 0 && drafts.length > 0);

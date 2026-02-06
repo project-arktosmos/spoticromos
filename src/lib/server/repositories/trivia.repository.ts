@@ -3,6 +3,7 @@ import type { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
 import type {
 	TriviaTemplateRow,
 	TriviaTemplateQuestionRow,
+	TriviaTemplateWithQuestions,
 	TriviaQuestionType,
 	TriviaQuestionConfig
 } from '$types/trivia.type';
@@ -37,6 +38,28 @@ export async function findAllTemplates(): Promise<
 		 ORDER BY t.updated_at DESC`
 	);
 	return rows;
+}
+
+export async function findAllTemplatesWithQuestions(): Promise<TriviaTemplateWithQuestions[]> {
+	const [templates] = await query<TriviaTemplateDbRow[]>(
+		'SELECT * FROM trivia_templates ORDER BY updated_at DESC'
+	);
+	const [questionRows] = await query<TriviaTemplateQuestionDbRow[]>(
+		'SELECT * FROM trivia_template_questions ORDER BY template_id, position ASC'
+	);
+
+	const questionsByTemplate = new Map<number, TriviaTemplateQuestionRow[]>();
+	for (const row of questionRows) {
+		const parsed = parseQuestionRow(row);
+		const list = questionsByTemplate.get(parsed.template_id) ?? [];
+		list.push(parsed);
+		questionsByTemplate.set(parsed.template_id, list);
+	}
+
+	return templates.map((t) => ({
+		...t,
+		questions: questionsByTemplate.get(t.id) ?? []
+	}));
 }
 
 export async function findTemplateById(id: number): Promise<TriviaTemplateRow | null> {

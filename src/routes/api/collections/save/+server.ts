@@ -1,6 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import { initializeSchema } from '$lib/server/schema';
 import { saveCollection } from '$lib/server/repositories/collection.repository';
+import { ensureUserExists } from '$lib/server/repositories/user.repository';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ request }) => {
@@ -30,10 +31,16 @@ export const POST: RequestHandler = async ({ request }) => {
 	try {
 		await initializeSchema();
 
+		if (typeof ownerId === 'string' && ownerId) {
+			await ensureUserExists({
+				spotifyId: ownerId,
+				displayName: typeof creatorName === 'string' ? creatorName : null
+			});
+		}
+
 		const collectionId = await saveCollection({
 			name,
 			coverImageUrl: typeof coverImageUrl === 'string' ? coverImageUrl : null,
-			creatorName: typeof creatorName === 'string' ? creatorName : null,
 			spotifyPlaylistId: playlistId,
 			spotifyOwnerId: typeof ownerId === 'string' ? ownerId : null
 		});

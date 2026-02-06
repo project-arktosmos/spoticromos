@@ -46,6 +46,19 @@ export async function upsertUser(data: {
 	);
 }
 
+export async function ensureUserExists(data: {
+	spotifyId: string;
+	displayName: string | null;
+}): Promise<void> {
+	await execute(
+		`INSERT INTO users (spotify_id, display_name)
+		 VALUES (?, ?)
+		 ON DUPLICATE KEY UPDATE
+		   display_name = COALESCE(VALUES(display_name), display_name)`,
+		[data.spotifyId, data.displayName]
+	);
+}
+
 export async function findUserBySpotifyId(spotifyId: string): Promise<UserRow | null> {
 	const [rows] = await query<UserDbRow[]>('SELECT * FROM users WHERE spotify_id = ?', [
 		spotifyId

@@ -29,6 +29,14 @@
 		loading = false;
 	}
 
+	async function refetchPlaylists() {
+		spotifyService.clearCache();
+		playlists = [];
+		total = 0;
+		offset = 0;
+		await fetchPlaylists();
+	}
+
 	function handleLogout() {
 		spotifyService.logout();
 		goto('/spotify');
@@ -38,7 +46,15 @@
 <div class="mx-auto flex min-h-screen max-w-4xl flex-col gap-6 p-8">
 	<div class="flex items-center justify-between">
 		<h1 class="text-2xl font-bold">Your Playlists</h1>
-		<button class="btn btn-outline btn-sm" onclick={handleLogout}>Logout</button>
+		<div class="flex gap-2">
+			<button class="btn btn-outline btn-sm" onclick={refetchPlaylists} disabled={loading}>
+				{#if loading}
+					<span class="loading loading-spinner loading-xs"></span>
+				{/if}
+				Refresh
+			</button>
+			<button class="btn btn-outline btn-sm" onclick={handleLogout}>Logout</button>
+		</div>
 	</div>
 
 	{#if playlists.length > 0}

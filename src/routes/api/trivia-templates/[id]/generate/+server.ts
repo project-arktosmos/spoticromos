@@ -42,6 +42,19 @@ function primaryArtist(item: CollectionItemWithArtists): string {
 	return (item.artists ?? '').split(',')[0].trim();
 }
 
+/**
+ * Shuffle options and return { options, correctIndex } using object reference
+ * tracking (safe even when labels are duplicated).
+ */
+function shuffleWithCorrect(
+	opts: TriviaOption[],
+	correctIdx: number
+): { options: TriviaOption[]; correctIndex: number } {
+	const correctRef = opts[correctIdx];
+	const shuffled = shuffleArray(opts);
+	return { options: shuffled, correctIndex: shuffled.indexOf(correctRef) };
+}
+
 // ---------------------------------------------------------------------------
 // Generators
 // ---------------------------------------------------------------------------
@@ -69,25 +82,23 @@ function generateWhichCameFirst(
 		const sorted = [...picked].sort(
 			(a, b) => Number(a.album_release_year) - Number(b.album_release_year)
 		);
-		const correct = sorted[0];
+		const correctItem = sorted[0];
 
 		const subject = config.subject === 'album' ? 'album' : 'song';
-		const options: TriviaOption[] = picked.map((item) => ({
+		const opts: TriviaOption[] = picked.map((item) => ({
 			label: subject === 'album' ? (item.album_name ?? item.track_name) : item.track_name,
 			meta: item.album_release_year ?? undefined,
 			imageUrl: item.album_cover_url
 		}));
 
-		const shuffled = shuffleArray(options);
-		const correctLabel =
-			subject === 'album' ? (correct.album_name ?? correct.track_name) : correct.track_name;
-		const correctIndex = shuffled.findIndex((o) => o.label === correctLabel);
+		const correctIdx = picked.indexOf(correctItem);
+		const { options, correctIndex } = shuffleWithCorrect(opts, correctIdx);
 
 		results.push({
 			templateQuestionId: questionId,
 			questionType: TriviaQuestionType.WhichCameFirst,
 			questionText: `Which ${subject} came out first?`,
-			options: shuffled,
+			options,
 			correctIndex,
 			imageUrl: null
 		});
@@ -114,17 +125,18 @@ function generateWhatYearReleased(
 
 		const correctYear = Number(item.album_release_year);
 		const offsets = [-3, -1, 1, 2, 3, -2, 4, -4];
-		const yearOptions = new Set<number>([correctYear]);
+		const yearSet = new Set<number>([correctYear]);
 		for (const offset of shuffleArray(offsets)) {
-			if (yearOptions.size >= 4) break;
+			if (yearSet.size >= 4) break;
 			const y = correctYear + offset;
-			if (y >= 1900) yearOptions.add(y);
+			if (y >= 1900) yearSet.add(y);
 		}
 
-		const options: TriviaOption[] = shuffleArray([...yearOptions]).map((y) => ({
-			label: String(y)
-		}));
-		const correctIndex = options.findIndex((o) => o.label === String(correctYear));
+		// Build options with correct answer at index 0, then shuffle with tracking
+		const yearArr = [...yearSet];
+		const opts: TriviaOption[] = yearArr.map((y) => ({ label: String(y) }));
+		const correctIdx = yearArr.indexOf(correctYear);
+		const { options, correctIndex } = shuffleWithCorrect(opts, correctIdx);
 
 		const subject = config.subject === 'album' ? 'album' : 'song';
 		const name = subject === 'album' ? (item.album_name ?? item.track_name) : item.track_name;
@@ -167,10 +179,9 @@ function generateWhatAlbumForSong(
 			config.optionCount - 1
 		);
 
-		const options: TriviaOption[] = shuffleArray(
-			[correctAlbum, ...distractors].map((a) => ({ label: a }))
-		);
-		const correctIndex = options.findIndex((o) => o.label === correctAlbum);
+		// Correct answer is always at index 0 before shuffle
+		const opts: TriviaOption[] = [correctAlbum, ...distractors].map((a) => ({ label: a }));
+		const { options, correctIndex } = shuffleWithCorrect(opts, 0);
 
 		results.push({
 			templateQuestionId: questionId,
@@ -210,10 +221,8 @@ function generateWhatArtistForTitle(
 			config.optionCount - 1
 		);
 
-		const options: TriviaOption[] = shuffleArray(
-			[correctArtist, ...distractors].map((a) => ({ label: a }))
-		);
-		const correctIndex = options.findIndex((o) => o.label === correctArtist);
+		const opts: TriviaOption[] = [correctArtist, ...distractors].map((a) => ({ label: a }));
+		const { options, correctIndex } = shuffleWithCorrect(opts, 0);
 
 		const subject = config.subject === 'album' ? 'album' : 'song';
 		const name = subject === 'album' ? (item.album_name ?? item.track_name) : item.track_name;
@@ -268,10 +277,9 @@ function generateArtistFirstAlbum(
 		const correct = albums[0];
 		const selected = [correct, ...pickRandom(albums.slice(1), config.optionCount - 1)];
 
-		const options: TriviaOption[] = shuffleArray(
-			selected.map((a) => ({ label: a.name, meta: a.year }))
-		);
-		const correctIndex = options.findIndex((o) => o.label === correct.name);
+		// Correct answer is at index 0 before shuffle
+		const opts: TriviaOption[] = selected.map((a) => ({ label: a.name, meta: a.year }));
+		const { options, correctIndex } = shuffleWithCorrect(opts, 0);
 
 		results.push({
 			templateQuestionId: questionId,
@@ -326,10 +334,8 @@ function generateWhoSangLyrics(
 			config.optionCount - 1
 		);
 
-		const options: TriviaOption[] = shuffleArray(
-			[correctArtist, ...distractors].map((a) => ({ label: a }))
-		);
-		const correctIndex = options.findIndex((o) => o.label === correctArtist);
+		const opts: TriviaOption[] = [correctArtist, ...distractors].map((a) => ({ label: a }));
+		const { options, correctIndex } = shuffleWithCorrect(opts, 0);
 
 		results.push({
 			templateQuestionId: questionId,
@@ -411,11 +417,12 @@ export const POST: RequestHandler = async ({ params, request }) => {
 		return error(400, 'Invalid JSON body');
 	}
 
-	const { collectionId } = body as { collectionId?: unknown };
+	const { collectionId, questionId } = body as { collectionId?: unknown; questionId?: unknown };
 	const colId = Number(collectionId);
 	if (!Number.isFinite(colId) || colId <= 0) {
 		return error(400, 'Missing or invalid collectionId');
 	}
+	const filterQuestionId = questionId != null ? Number(questionId) : null;
 
 	try {
 		await initializeSchema();
@@ -430,7 +437,13 @@ export const POST: RequestHandler = async ({ params, request }) => {
 			return error(404, 'Collection not found');
 		}
 
-		const questions = await findTemplateQuestions(templateId);
+		let questions = await findTemplateQuestions(templateId);
+		if (filterQuestionId != null) {
+			questions = questions.filter((q) => q.id === filterQuestionId);
+			if (questions.length === 0) {
+				return error(404, 'Question not found in this template');
+			}
+		}
 		const items = await findCollectionItemsWithArtists(colId);
 
 		let totalExpected = 0;

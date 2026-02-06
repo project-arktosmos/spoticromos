@@ -7,6 +7,7 @@ import {
 	deleteTemplate,
 	replaceTemplateQuestions
 } from '$lib/server/repositories/trivia.repository';
+import { validateQuestions } from '$lib/server/trivia-validation';
 import type { RequestHandler } from './$types';
 import type { UpdateTriviaTemplatePayload } from '$types/trivia.type';
 
@@ -47,6 +48,13 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 	}
 
 	const { name, description, questions } = body as Partial<UpdateTriviaTemplatePayload>;
+
+	if (Array.isArray(questions)) {
+		const validationError = validateQuestions(questions);
+		if (validationError) {
+			return error(400, validationError);
+		}
+	}
 
 	try {
 		await initializeSchema();

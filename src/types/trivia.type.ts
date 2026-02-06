@@ -1,5 +1,3 @@
-import type { ID } from '$types/core.type';
-
 // ---------------------------------------------------------------------------
 // Question type enum
 // ---------------------------------------------------------------------------
@@ -102,6 +100,25 @@ export interface TriviaTemplateQuestionRow {
 }
 
 // ---------------------------------------------------------------------------
+// Expanded template (with full questions)
+// ---------------------------------------------------------------------------
+
+export interface TriviaTemplateWithQuestions extends TriviaTemplateRow {
+	questions: TriviaTemplateQuestionRow[];
+}
+
+// ---------------------------------------------------------------------------
+// Collection summary (for selectors)
+// ---------------------------------------------------------------------------
+
+export interface CollectionSummary {
+	id: number;
+	name: string;
+	cover_image_url: string | null;
+	track_count: number;
+}
+
+// ---------------------------------------------------------------------------
 // API payload types
 // ---------------------------------------------------------------------------
 
@@ -133,6 +150,7 @@ export interface TriviaOption {
 	label: string;
 	meta?: string;
 	imageUrl?: string | null;
+	verification?: string;
 }
 
 export interface GeneratedTriviaQuestion {

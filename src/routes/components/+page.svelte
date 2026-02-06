@@ -5,6 +5,7 @@
 		CollectionItemWithArtists
 	} from '$lib/server/repositories/collection.repository';
 	import CollectionItem from '$components/core/CollectionItem.svelte';
+	import CollectionBadge from '$components/core/CollectionBadge.svelte';
 
 	interface CollectionWithCount extends CollectionRow {
 		track_count: number;
@@ -88,6 +89,20 @@
 				</div>
 			{:else}
 				<p class="text-base-content/70 text-center">No items in this collection.</p>
+			{/if}
+		</section>
+
+		<section class="flex flex-col gap-4">
+			<h2 class="text-lg font-semibold">CollectionBadge</h2>
+
+			{#if collections.length > 0}
+				<div class="flex flex-wrap gap-4">
+					{#each collections as collection (collection.id)}
+						<CollectionBadge {collection} />
+					{/each}
+				</div>
+			{:else}
+				<p class="text-base-content/70 text-center">No collections available.</p>
 			{/if}
 		</section>
 	{/if}

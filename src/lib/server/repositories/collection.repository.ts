@@ -9,10 +9,11 @@ export interface CollectionRow {
 	id: number;
 	name: string;
 	cover_image_url: string | null;
-	creator_name: string | null;
 	spotify_playlist_id: string;
 	spotify_owner_id: string | null;
 	created_at: string;
+	creator_display_name: string | null;
+	creator_avatar_url: string | null;
 }
 
 interface CollectionDbRow extends RowDataPacket, CollectionRow {}
@@ -73,19 +74,17 @@ interface CollectionArtistImageDbRow extends RowDataPacket, CollectionArtistImag
 export async function saveCollection(data: {
 	name: string;
 	coverImageUrl: string | null;
-	creatorName: string | null;
 	spotifyPlaylistId: string;
 	spotifyOwnerId: string | null;
 }): Promise<number> {
 	const [result] = await query<ResultSetHeader>(
-		`INSERT INTO collections (name, cover_image_url, creator_name, spotify_playlist_id, spotify_owner_id)
-		 VALUES (?, ?, ?, ?, ?)
+		`INSERT INTO collections (name, cover_image_url, spotify_playlist_id, spotify_owner_id)
+		 VALUES (?, ?, ?, ?)
 		 ON DUPLICATE KEY UPDATE
 		   name = VALUES(name),
 		   cover_image_url = VALUES(cover_image_url),
-		   creator_name = VALUES(creator_name),
 		   spotify_owner_id = VALUES(spotify_owner_id)`,
-		[data.name, data.coverImageUrl, data.creatorName, data.spotifyPlaylistId, data.spotifyOwnerId]
+		[data.name, data.coverImageUrl, data.spotifyPlaylistId, data.spotifyOwnerId]
 	);
 
 	// If the row was inserted, result.insertId is the new ID.
@@ -101,17 +100,27 @@ export async function saveCollection(data: {
 
 export async function findAllCollections(): Promise<(CollectionRow & { track_count: number })[]> {
 	const [rows] = await query<(CollectionDbRow & { track_count: number })[]>(
-		`SELECT c.*, COUNT(ci.id) AS track_count
+		`SELECT c.*,
+		        u.display_name AS creator_display_name,
+		        u.avatar_url AS creator_avatar_url,
+		        (SELECT COUNT(*) FROM collection_items ci WHERE ci.collection_id = c.id) AS track_count
 		 FROM collections c
-		 LEFT JOIN collection_items ci ON ci.collection_id = c.id
-		 GROUP BY c.id
+		 LEFT JOIN users u ON u.spotify_id = c.spotify_owner_id
 		 ORDER BY c.created_at DESC`
 	);
 	return rows;
 }
 
 export async function findCollectionById(id: number): Promise<CollectionRow | null> {
-	const [rows] = await query<CollectionDbRow[]>('SELECT * FROM collections WHERE id = ?', [id]);
+	const [rows] = await query<CollectionDbRow[]>(
+		`SELECT c.*,
+		        u.display_name AS creator_display_name,
+		        u.avatar_url AS creator_avatar_url
+		 FROM collections c
+		 LEFT JOIN users u ON u.spotify_id = c.spotify_owner_id
+		 WHERE c.id = ?`,
+		[id]
+	);
 	return rows.length ? rows[0] : null;
 }
 
@@ -119,7 +128,12 @@ export async function findCollectionByPlaylistId(
 	spotifyPlaylistId: string
 ): Promise<CollectionRow | null> {
 	const [rows] = await query<CollectionDbRow[]>(
-		'SELECT * FROM collections WHERE spotify_playlist_id = ?',
+		`SELECT c.*,
+		        u.display_name AS creator_display_name,
+		        u.avatar_url AS creator_avatar_url
+		 FROM collections c
+		 LEFT JOIN users u ON u.spotify_id = c.spotify_owner_id
+		 WHERE c.spotify_playlist_id = ?`,
 		[spotifyPlaylistId]
 	);
 	return rows.length ? rows[0] : null;
@@ -263,6 +277,10 @@ export async function findCollectionItems(collectionId: number): Promise<Collect
 export interface CollectionItemWithArtists extends CollectionItemRow {
 	artists: string;
 	artist_image_url: string | null;
+	rarity_id?: number;
+	rarity_name?: string;
+	rarity_color?: string;
+	rarity_level?: number;
 }
 
 export async function findCollectionItemsWithArtists(
