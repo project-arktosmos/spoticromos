@@ -83,7 +83,7 @@
 
 {#if open}
 	<dialog class="modal modal-open">
-		<div class="modal-box max-w-4xl">
+		<div class="modal-box md:h-[90vh] md:w-[90vw] md:max-w-none md:max-h-none">
 			<div class="mb-4 flex items-center justify-between">
 				<h3 class="text-lg font-bold">{collectionName}</h3>
 				<span class="badge badge-primary">{unrevealedCount} remaining</span>
