@@ -10,7 +10,7 @@
 	let collection = $state<CollectionRow | null>(null);
 	let items = $state<CollectionItemWithArtists[]>([]);
 	let ownedItemIds = $state<Set<number>>(new Set());
-	let ownedItemRarities = $state<Map<number, OwnedItemRarity>>(new Map());
+	let ownedItemRarities = $state<Map<number, OwnedItemRarity[]>>(new Map());
 	let loading = $state(true);
 	let errorMsg = $state('');
 
@@ -25,9 +25,11 @@
 			collection = json.collection;
 			items = json.items;
 			ownedItemIds = new Set(json.ownedItemIds ?? []);
-			const rarityMap = new Map<number, OwnedItemRarity>();
+			const rarityMap = new Map<number, OwnedItemRarity[]>();
 			for (const r of json.ownedItemRarities ?? []) {
-				rarityMap.set(r.collection_item_id, r);
+				const list = rarityMap.get(r.collection_item_id) ?? [];
+				list.push(r);
+				rarityMap.set(r.collection_item_id, list);
 			}
 			ownedItemRarities = rarityMap;
 		} catch (err) {
@@ -94,14 +96,16 @@
 		{#if items.length > 0}
 			<div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
 				{#each items as item (item.id)}
-					{@const rarity = ownedItemRarities.get(item.id)}
+					{@const rarities = ownedItemRarities.get(item.id) ?? []}
+					{@const bestRarity = rarities[0] ?? null}
 					<CollectionItem
 						{item}
 						owned={!data.user || ownedItemIds.has(item.id)}
 						showToggle={!!data.user}
 						onToggleOwnership={() => toggleItemOwnership(item.id)}
-						rarityColor={rarity?.rarity_color ?? null}
-						rarityName={rarity?.rarity_name ?? null}
+						rarityColor={bestRarity?.rarity_color ?? null}
+						rarityName={bestRarity?.rarity_name ?? null}
+						rarityCounts={rarities}
 					/>
 				{/each}
 			</div>

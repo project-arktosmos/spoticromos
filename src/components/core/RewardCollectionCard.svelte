@@ -12,8 +12,8 @@
 
 	let { collection, addingRewards, onadd, onclaim, classes = '' }: Props = $props();
 
-	let allClaimed = $derived(collection.claimed_items >= collection.total_items);
-	let claimDisabled = $derived(collection.unclaimed_rewards < 1 || allClaimed);
+	let allClaimed = $derived(collection.total_items > 0 && collection.claimed_items >= collection.total_items);
+	let claimDisabled = $derived(collection.unclaimed_rewards < 1);
 </script>
 
 <div class={classNames('card bg-base-200 shadow-sm', classes)}>

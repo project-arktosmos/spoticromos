@@ -12,14 +12,6 @@
 
 	let { imageUrl, label, kind, matched = false, gameLost = false, classes = '' }: Props = $props();
 
-	let containerClasses = $derived(classNames(
-		'flex w-full flex-col overflow-hidden rounded-lg',
-		'transition-transform duration-200',
-		matched && 'ring-2 ring-success ring-offset-2 ring-offset-base-100',
-		gameLost && !matched && 'ring-2 ring-error/50',
-		classes
-	));
-
 	let imageClasses = $derived(classNames(
 		'aspect-square w-full object-cover',
 		matched && 'opacity-80'
@@ -31,7 +23,7 @@
 	));
 </script>
 
-<div class={containerClasses}>
+<div class={classNames('flex w-full flex-col overflow-hidden rounded-lg', classes)}>
 	<img
 		src={imageUrl}
 		alt={label}

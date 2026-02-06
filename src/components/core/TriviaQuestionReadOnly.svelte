@@ -69,15 +69,15 @@
 			<div class="mt-2 flex flex-col gap-1">
 				{#each generated.options as option, i}
 					<div class={classNames(
-						'rounded px-2 py-1 text-sm',
+						'flex items-center gap-3 rounded px-2 py-1 text-sm',
 						{
 							'bg-success/20 font-semibold': i === generated.correctIndex,
 							'bg-base-100': i !== generated.correctIndex
 						}
 					)}>
-						{option.label}
-						{#if option.meta}
-							<span class="text-base-content/50 ml-1 text-xs">({option.meta})</span>
+						<span class="flex-1">{option.label}</span>
+						{#if option.verification}
+							<span class="text-base-content/50 text-xs">{option.verification}</span>
 						{/if}
 					</div>
 				{/each}

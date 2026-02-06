@@ -94,24 +94,19 @@ export async function claimRandomItem(
 			throw new Error('No unclaimed rewards available');
 		}
 
-		// Find a random collection item the user does NOT own
+		// Pick a random item from the collection (duplicates allowed)
 		const [candidateRows] = await conn.query<(RowDataPacket & { id: number })[]>(
 			`SELECT ci.id
 			 FROM collection_items ci
 			 WHERE ci.collection_id = ?
-			   AND ci.id NOT IN (
-				   SELECT uci.collection_item_id
-				   FROM user_collection_items uci
-				   WHERE uci.user_spotify_id = ?
-			   )
 			 ORDER BY RAND()
 			 LIMIT 1`,
-			[collectionId, userSpotifyId]
+			[collectionId]
 		);
 
 		if (candidateRows.length === 0) {
 			await conn.rollback();
-			return null; // all items already claimed
+			return null; // collection has no items
 		}
 
 		const claimedItemId = candidateRows[0].id;

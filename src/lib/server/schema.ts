@@ -267,6 +267,22 @@ CREATE TABLE IF NOT EXISTS trivia_template_questions (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 `;
 
+const CREATE_PAIR_GAME_RESULTS = `
+CREATE TABLE IF NOT EXISTS pair_game_results (
+  id               INT           NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  user_spotify_id  VARCHAR(100)  NOT NULL,
+  collection_id    INT           NOT NULL,
+  grid_size        SMALLINT      NOT NULL,
+  moves            INT           NOT NULL,
+  errors           INT           NOT NULL,
+  won              BOOLEAN       NOT NULL,
+  created_at       TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  INDEX idx_pgr_user_collection (user_spotify_id, collection_id),
+  INDEX idx_pgr_grid (grid_size)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+`;
+
 const TABLES = [
 	CREATE_ARTISTS,
 	CREATE_ALBUMS,
@@ -285,7 +301,8 @@ const TABLES = [
 	CREATE_RARITIES,
 	CREATE_USER_COLLECTION_ITEMS,
 	CREATE_TRIVIA_TEMPLATES,
-	CREATE_TRIVIA_TEMPLATE_QUESTIONS
+	CREATE_TRIVIA_TEMPLATE_QUESTIONS,
+	CREATE_PAIR_GAME_RESULTS
 ];
 
 interface ColumnRow extends RowDataPacket {
@@ -315,6 +332,11 @@ const MIGRATIONS: Array<{ table: string; column: string; sql: string }> = [
 		table: 'user_collections',
 		column: 'unclaimed_rewards',
 		sql: 'ALTER TABLE user_collections ADD COLUMN unclaimed_rewards INT NOT NULL DEFAULT 0'
+	},
+	{
+		table: 'user_collection_items',
+		column: 'is_stuck',
+		sql: 'ALTER TABLE user_collection_items ADD COLUMN is_stuck BOOLEAN NOT NULL DEFAULT FALSE AFTER rarity_id'
 	}
 ];
 

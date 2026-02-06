@@ -88,7 +88,8 @@ function generateWhichCameFirst(
 		const opts: TriviaOption[] = picked.map((item) => ({
 			label: subject === 'album' ? (item.album_name ?? item.track_name) : item.track_name,
 			meta: item.album_release_year ?? undefined,
-			imageUrl: item.album_cover_url
+			imageUrl: item.album_cover_url,
+			verification: `Released in ${item.album_release_year}`
 		}));
 
 		const correctIdx = picked.indexOf(correctItem);
@@ -134,7 +135,11 @@ function generateWhatYearReleased(
 
 		// Build options with correct answer at index 0, then shuffle with tracking
 		const yearArr = [...yearSet];
-		const opts: TriviaOption[] = yearArr.map((y) => ({ label: String(y) }));
+		const artist = primaryArtist(item);
+		const opts: TriviaOption[] = yearArr.map((y) => ({
+			label: String(y),
+			verification: y === correctYear ? `"${item.track_name}" by ${artist}` : undefined
+		}));
 		const correctIdx = yearArr.indexOf(correctYear);
 		const { options, correctIndex } = shuffleWithCorrect(opts, correctIdx);
 
@@ -180,7 +185,11 @@ function generateWhatAlbumForSong(
 		);
 
 		// Correct answer is always at index 0 before shuffle
-		const opts: TriviaOption[] = [correctAlbum, ...distractors].map((a) => ({ label: a }));
+		const yearStr = item.album_release_year ? ` (${item.album_release_year})` : '';
+		const opts: TriviaOption[] = [correctAlbum, ...distractors].map((a, idx) => ({
+			label: a,
+			verification: idx === 0 ? `"${item.track_name}" is on "${correctAlbum}"${yearStr}` : undefined
+		}));
 		const { options, correctIndex } = shuffleWithCorrect(opts, 0);
 
 		results.push({
@@ -221,7 +230,10 @@ function generateWhatArtistForTitle(
 			config.optionCount - 1
 		);
 
-		const opts: TriviaOption[] = [correctArtist, ...distractors].map((a) => ({ label: a }));
+		const opts: TriviaOption[] = [correctArtist, ...distractors].map((a, idx) => ({
+			label: a,
+			verification: idx === 0 ? `Performed "${item.track_name}"` : undefined
+		}));
 		const { options, correctIndex } = shuffleWithCorrect(opts, 0);
 
 		const subject = config.subject === 'album' ? 'album' : 'song';
@@ -278,7 +290,11 @@ function generateArtistFirstAlbum(
 		const selected = [correct, ...pickRandom(albums.slice(1), config.optionCount - 1)];
 
 		// Correct answer is at index 0 before shuffle
-		const opts: TriviaOption[] = selected.map((a) => ({ label: a.name, meta: a.year }));
+		const opts: TriviaOption[] = selected.map((a) => ({
+			label: a.name,
+			meta: a.year,
+			verification: `Released in ${a.year}`
+		}));
 		const { options, correctIndex } = shuffleWithCorrect(opts, 0);
 
 		results.push({
@@ -334,7 +350,10 @@ function generateWhoSangLyrics(
 			config.optionCount - 1
 		);
 
-		const opts: TriviaOption[] = [correctArtist, ...distractors].map((a) => ({ label: a }));
+		const opts: TriviaOption[] = [correctArtist, ...distractors].map((a, idx) => ({
+			label: a,
+			verification: idx === 0 ? `From "${item.track_name}"` : undefined
+		}));
 		const { options, correctIndex } = shuffleWithCorrect(opts, 0);
 
 		results.push({

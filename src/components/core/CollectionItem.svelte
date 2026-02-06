@@ -1,6 +1,7 @@
 <script lang="ts">
 	import classNames from 'classnames';
 	import type { CollectionItemWithArtists } from '$lib/server/repositories/collection.repository';
+	import type { OwnedItemRarity } from '$lib/server/repositories/ownership.repository';
 
 	interface Props {
 		item: CollectionItemWithArtists;
@@ -10,9 +11,10 @@
 		classes?: string;
 		rarityColor?: string | null;
 		rarityName?: string | null;
+		rarityCounts?: OwnedItemRarity[];
 	}
 
-	let { item, owned = true, showToggle = false, onToggleOwnership, classes = '', rarityColor = null, rarityName = null }: Props = $props();
+	let { item, owned = true, showToggle = false, onToggleOwnership, classes = '', rarityColor = null, rarityName = null, rarityCounts = [] }: Props = $props();
 
 	let borderStyle = $derived(
 		owned && rarityColor ? `border-color: ${rarityColor}` : ''
@@ -72,14 +74,16 @@
 		<p class="text-base-content/70 line-clamp-2 text-center text-xs">{item.artists ?? '--'}</p>
 	</div>
 
-	{#if rarityName && owned}
-		<div class="col-span-2 flex items-center justify-center py-1">
-			<span
-				class="text-xs font-bold uppercase tracking-wider"
-				style="color: {rarityColor}"
-			>
-				{rarityName}
-			</span>
+	{#if rarityCounts.length > 0 && owned}
+		<div class="absolute top-1 left-1 flex flex-col gap-0.5">
+			{#each rarityCounts as rc}
+				<span
+					class="rounded px-1 py-0.5 text-[10px] font-bold leading-none text-white shadow"
+					style="background-color: {rc.rarity_color}"
+				>
+					{rc.copy_count}x {rc.rarity_name}
+				</span>
+			{/each}
 		</div>
 	{/if}
 

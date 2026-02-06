@@ -3,8 +3,9 @@
 	import classNames from 'classnames';
 	import type { CollectionRow } from '$lib/server/repositories/collection.repository';
 	import type { CollectionItemWithArtists } from '$lib/server/repositories/collection.repository';
-	import PairCardBack from '$components/core/PairCardBack.svelte';
-	import PairCardFront from '$components/core/PairCardFront.svelte';
+	import PairCard from '$components/core/PairCard.svelte';
+
+	let { data } = $props();
 
 	interface CollectionWithCount extends CollectionRow {
 		track_count: number;
@@ -42,6 +43,7 @@
 	let gameWon = $state(false);
 	let gameLost = $state(false);
 	let gridSize = $state(3);
+	let rewardResult = $state<{ rewards: number; newHighscore: boolean } | null>(null);
 
 	const MIN_GRID = 3;
 
@@ -61,8 +63,8 @@
 		try {
 			const res = await fetch('/api/collections');
 			if (!res.ok) throw new Error(`HTTP ${res.status}`);
-			const data = await res.json();
-			collections = data.collections;
+			const json = await res.json();
+			collections = json.collections;
 		} catch (err) {
 			errorMsg = err instanceof Error ? err.message : 'Failed to load collections';
 		} finally {
@@ -78,8 +80,8 @@
 		try {
 			const res = await fetch(`/api/collections/${collection.id}`);
 			if (!res.ok) throw new Error(`HTTP ${res.status}`);
-			const data = await res.json();
-			items = data.items;
+			const json = await res.json();
+			items = json.items;
 			startGame();
 		} catch (err) {
 			errorMsg = err instanceof Error ? err.message : 'Failed to load collection';
@@ -138,6 +140,7 @@
 		isChecking = false;
 		gameWon = false;
 		gameLost = false;
+		rewardResult = null;
 		gameStarted = true;
 
 		const gameCards: GameCard[] = [];
@@ -170,6 +173,7 @@
 
 				if (matchedPairs === totalPairs) {
 					gameWon = true;
+					submitGameResult(true);
 				}
 			} else {
 				errors++;
@@ -182,6 +186,7 @@
 						flippedIndices = [];
 						isChecking = false;
 						gameLost = true;
+						submitGameResult(false);
 					}, 800);
 				} else {
 					isChecking = true;
@@ -227,7 +232,27 @@
 		errorMsg = '';
 	}
 
-	let maxErrors = $derived(Math.floor(gridSize * (gridSize - 1) / 2));
+	async function submitGameResult(won: boolean) {
+		if (!data.user || !selectedCollection) return;
+		try {
+			const res = await fetch('/api/pairs/complete', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					collectionId: selectedCollection.id,
+					gridSize,
+					moves,
+					errors,
+					won
+				})
+			});
+			if (res.ok) {
+				rewardResult = await res.json();
+			}
+		} catch { /* silent */ }
+	}
+
+	let maxErrors = $derived(totalPairs);
 	let gridCols = $derived(gridColsMap[Math.min(gridSize, 12)] ?? 'grid-cols-12');
 	let gridMaxWidth = $derived(maxWidthMap[Math.min(gridSize, 8)] ?? 'max-w-6xl');
 </script>
@@ -309,6 +334,14 @@
 				<div>
 					<span class="text-lg font-bold">Level complete!</span>
 					<span>{moves} moves, {errors} errors.</span>
+					{#if rewardResult && rewardResult.rewards > 0}
+						<span class="font-semibold">
+							+{rewardResult.rewards} reward{rewardResult.rewards > 1 ? 's' : ''}
+							{#if rewardResult.newHighscore}
+								(new highscore!)
+							{/if}
+						</span>
+					{/if}
 				</div>
 				<div class="flex gap-2">
 					<button class="btn btn-sm" onclick={nextLevel}>
@@ -341,17 +374,14 @@
 					onclick={() => flipCard(index)}
 					disabled={card.state !== 'faceDown' || isChecking || gameWon || gameLost}
 				>
-					{#if card.state === 'faceDown'}
-						<PairCardBack {gameLost} />
-					{:else}
-						<PairCardFront
-							imageUrl={card.imageUrl}
-							label={card.label}
-							kind={card.kind}
-							matched={card.state === 'matched'}
-							{gameLost}
-						/>
-					{/if}
+					<PairCard
+						imageUrl={card.imageUrl}
+						label={card.label}
+						kind={card.kind}
+						flipped={card.state !== 'faceDown'}
+						matched={card.state === 'matched'}
+						{gameLost}
+					/>
 				</button>
 			{/each}
 		</div>
