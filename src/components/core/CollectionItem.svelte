@@ -18,65 +18,85 @@
 		rarityCounts?: OwnedItemRarity[];
 	}
 
-	let { item, owned = true, stuck = false, showToggle = false, onToggleOwnership, onToggleStick, onOpenDetail, showStickInHeader = false, classes = '', rarityColor = null, rarityName = null, rarityCounts = [] }: Props = $props();
+	let {
+		item,
+		owned = true,
+		stuck = false,
+		showToggle = false,
+		onToggleOwnership,
+		onToggleStick,
+		onOpenDetail,
+		classes = '',
+		rarityColor = null,
+		rarityCounts = []
+	}: Props = $props();
 
-	let computedClasses = $derived(classNames(
-		'grid grid-cols-2 w-full overflow-hidden rounded-lg border-2 relative transition-all duration-300',
-		{ 'bg-base-300': !rarityColor },
-		{
-			'opacity-50': !owned,
-			'opacity-80 border-dashed': owned && !stuck,
-			'opacity-100 shadow-lg': owned && stuck,
-		},
-		{
-			'border-base-content/20': !owned && !rarityColor,
-			'border-base-content/40': owned && !stuck && !rarityColor,
-			'border-black': owned && !stuck && !rarityColor,
-		},
-		{
-			'[border-color:var(--rc)] [box-shadow:0_0_12px_var(--rc-40)] [background-color:var(--rc-20)]': stuck && !!rarityColor,
-			'[border-color:var(--rc-40)] [background-color:var(--rc-20)]': owned && !stuck && !!rarityColor,
-			'[background-color:var(--rc-20)]': !owned && !!rarityColor,
-		},
-		classes
-	));
+	let computedClasses = $derived(
+		classNames(
+			'grid grid-cols-2 w-full overflow-hidden rounded-lg border-2 relative transition-all duration-300',
+			{ 'bg-base-300': !rarityColor },
+			{
+				'opacity-50': !owned,
+				'opacity-80 border-dashed': owned && !stuck,
+				'opacity-100 shadow-lg': owned && stuck
+			},
+			{
+				'border-base-content/20': !owned && !rarityColor,
+				'border-base-content/40': owned && !stuck && !rarityColor,
+				'border-black': owned && !stuck && !rarityColor
+			},
+			{
+				'[border-color:var(--rc)] [box-shadow:0_0_12px_var(--rc-40)] [background-color:var(--rc-20)]':
+					stuck && !!rarityColor,
+				'[border-color:var(--rc-40)] [background-color:var(--rc-20)]':
+					owned && !stuck && !!rarityColor,
+				'[background-color:var(--rc-20)]': !owned && !!rarityColor
+			},
+			classes
+		)
+	);
 
-	let imageClasses = $derived(classNames(
-		'aspect-square w-full object-cover transition-all duration-300',
-		{
+	let imageClasses = $derived(
+		classNames('aspect-square w-full object-cover transition-all duration-300', {
 			'grayscale opacity-60': !owned,
 			'grayscale-[50%] opacity-80': owned && !stuck
-		}
-	));
+		})
+	);
 
-	let innerBorderClasses = $derived(classNames(
-		{ 'border-dashed': owned && !stuck },
-		{
-			'border-base-content/20': !rarityColor && !owned,
-			'border-base-content/40': !rarityColor && owned && !stuck,
-			'border-base-content': !rarityColor && owned && stuck
-		},
-		{
-			'[border-color:var(--rc)]': !!rarityColor && stuck,
-			'[border-color:var(--rc-40)]': !!rarityColor && owned && !stuck,
-			'[border-color:var(--rc-20)]': !!rarityColor && !owned,
-		}
-	));
+	let innerBorderClasses = $derived(
+		classNames(
+			{ 'border-dashed': owned && !stuck },
+			{
+				'border-base-content/20': !rarityColor && !owned,
+				'border-base-content/40': !rarityColor && owned && !stuck,
+				'border-base-content': !rarityColor && owned && stuck
+			},
+			{
+				'[border-color:var(--rc)]': !!rarityColor && stuck,
+				'[border-color:var(--rc-40)]': !!rarityColor && owned && !stuck,
+				'[border-color:var(--rc-20)]': !!rarityColor && !owned
+			}
+		)
+	);
 
-	let albumCellClasses = $derived(classNames(
-		'border-r-2 aspect-square overflow-hidden flex items-center justify-center bg-base-300',
-		innerBorderClasses,
-		{
-			'[background-color:var(--rc)] [border-color:var(--rc)]': !!rarityColor && stuck,
-			'[background-color:var(--rc-40)] [border-color:var(--rc-40)]': !!rarityColor && owned && !stuck,
-			'[background-color:var(--rc-20)] [border-color:var(--rc-20)]': !!rarityColor && !owned,
-		}
-	));
+	let albumCellClasses = $derived(
+		classNames(
+			'border-r-2 aspect-square overflow-hidden flex items-center justify-center bg-base-300',
+			innerBorderClasses,
+			{
+				'[background-color:var(--rc)] [border-color:var(--rc)]': !!rarityColor && stuck,
+				'[background-color:var(--rc-40)] [border-color:var(--rc-40)]':
+					!!rarityColor && owned && !stuck,
+				'[background-color:var(--rc-20)] [border-color:var(--rc-20)]': !!rarityColor && !owned
+			}
+		)
+	);
 
-	let artistCellClasses = $derived(classNames(
-		'flex w-full items-center justify-center overflow-hidden p-3',
-		{ '[background-color:var(--rc-80)]': !!rarityColor }
-	));
+	let artistCellClasses = $derived(
+		classNames('flex w-full items-center justify-center overflow-hidden p-3', {
+			'[background-color:var(--rc-80)]': !!rarityColor
+		})
+	);
 </script>
 
 <div
@@ -92,15 +112,19 @@
 	</div>
 
 	<!-- Divider top -->
-	<div class={classNames("col-span-2 border-t-2", innerBorderClasses)}></div>
+	<div class={classNames('col-span-2 border-t-2', innerBorderClasses)}></div>
 
 	<!-- Row 2: Album image | Artist image -->
 	<div
 		class={classNames('col-span-2 grid grid-cols-2', { 'cursor-pointer': onToggleStick && owned })}
-		onclick={() => { if (onToggleStick && owned) onToggleStick(); }}
-		onkeydown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && onToggleStick && owned) onToggleStick(); }}
-		role={onToggleStick && owned ? 'button' : undefined}
-		tabindex={onToggleStick && owned ? 0 : undefined}
+		onclick={() => {
+			if (onToggleStick && owned) onToggleStick();
+		}}
+		onkeydown={(e) => {
+			if ((e.key === 'Enter' || e.key === ' ') && onToggleStick && owned) onToggleStick();
+		}}
+		role="button"
+		tabindex="0"
 	>
 		<div class={albumCellClasses}>
 			{#if item.album_cover_url}
@@ -110,8 +134,8 @@
 					class={imageClasses}
 				/>
 			{:else}
-				<div class="bg-base-300 flex aspect-square w-full items-center justify-center">
-					<span class="text-base-content/30 text-4xl">&#9835;</span>
+				<div class="flex aspect-square w-full items-center justify-center bg-base-300">
+					<span class="text-4xl text-base-content/30">&#9835;</span>
 				</div>
 			{/if}
 		</div>
@@ -124,23 +148,26 @@
 				/>
 			{:else}
 				<div
-					class={classNames("bg-base-300 flex aspect-square w-full items-center justify-center rounded-full border-2", innerBorderClasses)}
+					class={classNames(
+						'flex aspect-square w-full items-center justify-center rounded-full border-2 bg-base-300',
+						innerBorderClasses
+					)}
 				>
-					<span class="text-base-content/30 text-3xl">&#9834;</span>
+					<span class="text-3xl text-base-content/30">&#9834;</span>
 				</div>
 			{/if}
 		</div>
 	</div>
 
 	<!-- Divider bottom -->
-	<div class={classNames("col-span-2 border-t-2", innerBorderClasses)}></div>
+	<div class={classNames('col-span-2 border-t-2', innerBorderClasses)}></div>
 
 	<!-- Row 3: Album | Artist -->
 	<div class="flex min-h-12 items-center justify-center bg-base-300 p-2">
-		<p class="text-base-content/60 line-clamp-2 text-center text-xs">{item.album_name ?? '--'}</p>
+		<p class="line-clamp-2 text-center text-xs text-base-content/60">{item.album_name ?? '--'}</p>
 	</div>
 	<div class="flex min-h-12 items-center justify-center bg-base-300 p-2">
-		<p class="text-base-content/70 line-clamp-2 text-center text-xs">{item.artists ?? '--'}</p>
+		<p class="line-clamp-2 text-center text-xs text-base-content/70">{item.artists ?? '--'}</p>
 	</div>
 
 	{#if rarityCounts.length > 0 && owned}
@@ -148,7 +175,7 @@
 			{#each rarityCounts as rc}
 				<span
 					class={classNames(
-						'rounded px-1 py-0.5 text-[10px] font-bold leading-none text-white shadow [background-color:var(--badge-color)]',
+						'rounded [background-color:var(--badge-color)] px-1 py-0.5 text-[10px] leading-none font-bold text-white shadow',
 						{ 'ring-2 ring-white ring-offset-1': rc.is_stuck }
 					)}
 					style:--badge-color={rc.rarity_color}
@@ -164,7 +191,7 @@
 
 	{#if onOpenDetail}
 		<button
-			class="btn btn-circle btn-xs btn-ghost absolute top-1 right-1"
+			class="btn absolute top-1 right-1 btn-circle btn-ghost btn-xs"
 			onclick={onOpenDetail}
 			title="View details"
 		>
@@ -173,14 +200,12 @@
 	{/if}
 
 	{#if showToggle}
-		<div class="absolute top-1 right-1 flex flex-col gap-1"
-			class:top-7={!!onOpenDetail}
-		>
+		<div class="absolute top-1 right-1 flex flex-col gap-1" class:top-7={!!onOpenDetail}>
 			<button
-				class={classNames(
-					'btn btn-circle btn-xs',
-					{ 'btn-primary btn-outline': owned, 'btn-ghost': !owned }
-				)}
+				class={classNames('btn btn-circle btn-xs', {
+					'btn-outline btn-primary': owned,
+					'btn-ghost': !owned
+				})}
 				onclick={onToggleOwnership}
 				title={owned ? 'Remove from owned' : 'Add to owned'}
 			>

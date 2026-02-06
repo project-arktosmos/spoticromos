@@ -88,14 +88,12 @@ export interface WhatYearReleasedConfig {
 	subject: 'song' | 'album';
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface WhatAlbumForSongConfig {}
 
 export interface WhatArtistForTitleConfig {
 	subject: 'song' | 'album';
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface ArtistFirstAlbumConfig {}
 
 export interface WhoSangLyricsConfig {
@@ -106,23 +104,18 @@ export interface WhatLabelReleasedItConfig {
 	subject: 'song' | 'album';
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface FinishTheLyricConfig {}
 
 export interface WhatSongFromLyricsConfig {
 	fragmentLength: number;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface NameTheAlbumFromCoverConfig {}
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface OddOneOutConfig {}
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface WhatGenreForArtistConfig {}
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface MostFollowedArtistConfig {}
 
 // ---------------------------------------------------------------------------
@@ -159,7 +152,9 @@ export type TriviaQuestionConfig = (
 	| OddOneOutConfig
 	| WhatGenreForArtistConfig
 	| MostFollowedArtistConfig
-) & ImageDisplayConfig & VerificationConfig;
+) &
+	ImageDisplayConfig &
+	VerificationConfig;
 
 // ---------------------------------------------------------------------------
 // Default configs per question type

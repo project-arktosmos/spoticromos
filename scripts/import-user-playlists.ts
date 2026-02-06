@@ -10,9 +10,17 @@
  */
 
 import { initializeSchema } from '$lib/server/schema';
-import { spotifyFetch } from '$lib/server/spotify-api';
-import { findCollectionByPlaylistId, findCollectionTrackIds } from '$lib/server/repositories/collection.repository';
-import { resolveToken, importPlaylist, type ImportResult } from './lib/import-core';
+import {
+	findCollectionByPlaylistId,
+	findCollectionTrackIds
+} from '$lib/server/repositories/collection.repository';
+import {
+	resolveToken,
+	tokenFetch,
+	importPlaylist,
+	type TokenHandle,
+	type ImportResult
+} from './lib/import-core';
 import type { SpotifyPlaylist, SpotifyPaginatedResponse } from '$types/spotify.type';
 
 // ---------------------------------------------------------------------------
@@ -68,16 +76,16 @@ interface PlaylistSummary {
 
 async function fetchUserPlaylists(
 	spotifyUserId: string,
-	token: string
+	handle: TokenHandle
 ): Promise<PlaylistSummary[]> {
 	const playlists: PlaylistSummary[] = [];
 	let offset = 0;
 	const limit = 50;
 
 	while (true) {
-		const page = await spotifyFetch<SpotifyPaginatedResponse<SpotifyPlaylist>>(
+		const page = await tokenFetch<SpotifyPaginatedResponse<SpotifyPlaylist>>(
 			`/users/${encodeURIComponent(spotifyUserId)}/playlists?limit=${limit}&offset=${offset}`,
-			token
+			handle
 		);
 
 		for (const pl of page.items) {
@@ -114,7 +122,7 @@ async function main() {
 
 	// Fetch all playlists
 	console.log(`\nFetching playlists for user: ${spotifyUserId}`);
-	const playlists = await fetchUserPlaylists(spotifyUserId, handle.token);
+	const playlists = await fetchUserPlaylists(spotifyUserId, handle);
 
 	if (playlists.length === 0) {
 		console.error('No public playlists found.');

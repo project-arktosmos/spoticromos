@@ -22,9 +22,15 @@
 	let { question = null, onsave, oncancel, classes = '' }: Props = $props();
 
 	// svelte-ignore state_referenced_locally
-	let questionType = $state<TriviaQuestionType>(question?.question_type ?? TriviaQuestionType.WhichCameFirst);
+	let questionType = $state<TriviaQuestionType>(
+		question?.question_type ?? TriviaQuestionType.WhichCameFirst
+	);
 	// svelte-ignore state_referenced_locally
-	let config = $state<TriviaQuestionConfig>(question?.config ? { ...question.config } : { ...DEFAULT_CONFIGS[TriviaQuestionType.WhichCameFirst] });
+	let config = $state<TriviaQuestionConfig>(
+		question?.config
+			? { ...question.config }
+			: { ...DEFAULT_CONFIGS[TriviaQuestionType.WhichCameFirst] }
+	);
 
 	const questionTypes = Object.values(TriviaQuestionType);
 
@@ -49,8 +55,9 @@
 			</div>
 			<select
 				value={questionType}
-				onchange={(e) => changeQuestionType((e.target as HTMLSelectElement).value as TriviaQuestionType)}
-				class="select select-bordered w-full"
+				onchange={(e) =>
+					changeQuestionType((e.target as HTMLSelectElement).value as TriviaQuestionType)}
+				class="select-bordered select w-full"
 			>
 				{#each questionTypes as type}
 					<option value={type}>{TRIVIA_QUESTION_TYPE_LABELS[type]}</option>
@@ -61,7 +68,9 @@
 		<TriviaQuestionConfigFields
 			{questionType}
 			{config}
-			onchange={(c) => { config = c; }}
+			onchange={(c) => {
+				config = c;
+			}}
 		/>
 	</div>
 

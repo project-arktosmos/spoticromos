@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/stores';
-	import type { CollectionRow, CollectionItemWithArtists } from '$lib/server/repositories/collection.repository';
+	import type {
+		CollectionRow,
+		CollectionItemWithArtists
+	} from '$lib/server/repositories/collection.repository';
 	import type { OwnedItemRarity } from '$lib/server/repositories/ownership.repository';
 	import type { RarityRow } from '$types/rarity.type';
 	import CollectionBadge from '$components/core/CollectionBadge.svelte';
@@ -42,8 +45,12 @@
 	});
 
 	let modalItemId = $state<number | null>(null);
-	let modalItem = $derived(modalItemId !== null ? items.find(i => i.id === modalItemId) ?? null : null);
-	let modalRarities = $derived(modalItemId !== null ? ownedItemRarities.get(modalItemId) ?? [] : []);
+	let modalItem = $derived(
+		modalItemId !== null ? (items.find((i) => i.id === modalItemId) ?? null) : null
+	);
+	let modalRarities = $derived(
+		modalItemId !== null ? (ownedItemRarities.get(modalItemId) ?? []) : []
+	);
 	let modalBestRarity = $derived(modalRarities[0] ?? null);
 
 	// Progress: collection complete when 1 copy of each rarity of each item is owned
@@ -56,10 +63,10 @@
 		return count;
 	});
 	let rarityProgress = $derived.by(() => {
-		return allRarities.map(rarity => {
+		return allRarities.map((rarity) => {
 			let ownedCount = 0;
 			for (const itemRarities of ownedItemRarities.values()) {
-				if (itemRarities.some(r => r.rarity_id === rarity.id)) {
+				if (itemRarities.some((r) => r.rarity_id === rarity.id)) {
 					ownedCount++;
 				}
 			}
@@ -175,33 +182,6 @@
 		}
 	}
 
-	async function toggleItemOwnership(itemId: number) {
-		if (!data.user || !collection) return;
-		const isOwned = ownedItemIds.has(itemId);
-		const method = isOwned ? 'DELETE' : 'POST';
-		try {
-			const res = await fetch(
-				`/api/collections/${collection.id}/items/${itemId}/own`,
-				{ method }
-			);
-			if (!res.ok) throw new Error(`HTTP ${res.status}`);
-			const next = new Set(ownedItemIds);
-			if (isOwned) {
-				next.delete(itemId);
-				if (stuckItemIds.has(itemId)) {
-					const nextStuck = new Set(stuckItemIds);
-					nextStuck.delete(itemId);
-					stuckItemIds = nextStuck;
-				}
-			} else {
-				next.add(itemId);
-			}
-			ownedItemIds = next;
-		} catch (err) {
-			console.error('Failed to toggle item ownership:', err);
-		}
-	}
-
 	async function toggleStick(itemId: number) {
 		if (!data.user || !collection) return;
 		if (!ownedItemIds.has(itemId)) return;
@@ -210,17 +190,16 @@
 		const method = isStuck ? 'DELETE' : 'POST';
 
 		try {
-			const res = await fetch(
-				`/api/collections/${collection.id}/items/${itemId}/stick`,
-				{ method }
-			);
+			const res = await fetch(`/api/collections/${collection.id}/items/${itemId}/stick`, {
+				method
+			});
 			if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
 			const nextStuck = new Set(stuckItemIds);
 			if (isStuck) {
 				nextStuck.delete(itemId);
 				const currentRarities = ownedItemRarities.get(itemId) ?? [];
-				const updatedRarities = currentRarities.map(r => ({ ...r, is_stuck: false }));
+				const updatedRarities = currentRarities.map((r) => ({ ...r, is_stuck: false }));
 				const nextMap = new Map(ownedItemRarities);
 				nextMap.set(itemId, updatedRarities);
 				ownedItemRarities = nextMap;
@@ -228,7 +207,7 @@
 				nextStuck.add(itemId);
 				const result = await res.json();
 				const currentRarities = ownedItemRarities.get(itemId) ?? [];
-				const updatedRarities = currentRarities.map(r => ({
+				const updatedRarities = currentRarities.map((r) => ({
 					...r,
 					is_stuck: r.rarity_id === result.rarity_id
 				}));
@@ -245,14 +224,11 @@
 	async function mergeItem(itemId: number, rarityId: number) {
 		if (!data.user || !collection) return;
 		try {
-			const res = await fetch(
-				`/api/collections/${collection.id}/items/${itemId}/merge`,
-				{
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ rarityId })
-				}
-			);
+			const res = await fetch(`/api/collections/${collection.id}/items/${itemId}/merge`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ rarityId })
+			});
 			if (!res.ok) {
 				const err = await res.json().catch(() => ({}));
 				throw new Error(err.message ?? `HTTP ${res.status}`);
@@ -266,14 +242,11 @@
 	async function recycleItem(itemId: number, rarityId: number) {
 		if (!data.user || !collection) return;
 		try {
-			const res = await fetch(
-				`/api/collections/${collection.id}/items/${itemId}/recycle`,
-				{
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ rarityId })
-				}
-			);
+			const res = await fetch(`/api/collections/${collection.id}/items/${itemId}/recycle`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ rarityId })
+			});
 			if (!res.ok) {
 				const err = await res.json().catch(() => ({}));
 				throw new Error(err.message ?? `HTTP ${res.status}`);
@@ -288,7 +261,7 @@
 <div class="flex min-h-screen w-full flex-col gap-6 p-4 tablet:p-8">
 	{#if loading}
 		<div class="flex flex-1 items-center justify-center">
-			<span class="loading loading-spinner loading-lg"></span>
+			<span class="loading loading-lg loading-spinner"></span>
 		</div>
 	{:else if errorMsg}
 		<div class="alert alert-error">
@@ -296,22 +269,32 @@
 		</div>
 	{:else if collection}
 		<div class="grid grid-cols-1 gap-4 tablet:grid-cols-2 large:grid-cols-3">
-			<CollectionBadge {collection} classes="w-full" progress={completedSlots} progressMax={totalSlots} rarityColor={badgeRarityColor} />
+			<CollectionBadge
+				{collection}
+				classes="w-full"
+				progress={completedSlots}
+				progressMax={totalSlots}
+				rarityColor={badgeRarityColor}
+			/>
 			{#if data.user && items.length > 0 && allRarities.length > 0}
 				<div class="hidden flex-col justify-center gap-2 large:order-3 large:flex">
 					{#each rarityProgress as rp}
 						<div class="flex flex-col gap-1 rounded-lg p-2" style:--rarity-color={rp.color}>
 							<div class="flex items-center justify-between">
 								<span class="text-xs font-semibold [color:var(--rarity-color)]">{rp.name}</span>
-								<span class="text-base-content/60 text-[10px]">{rp.owned}/{rp.total}</span>
+								<span class="text-[10px] text-base-content/60">{rp.owned}/{rp.total}</span>
 							</div>
-							<progress class="progress h-1.5 w-full [color:var(--rarity-color)]" value={rp.owned} max={rp.total}></progress>
+							<progress
+								class="progress h-1.5 w-full [color:var(--rarity-color)]"
+								value={rp.owned}
+								max={rp.total}
+							></progress>
 						</div>
 					{/each}
 				</div>
 			{:else}
 				<div class="hidden items-center large:order-3 large:flex">
-					<p class="text-base-content/50 text-sm">{items.length} tracks</p>
+					<p class="text-sm text-base-content/50">{items.length} tracks</p>
 				</div>
 			{/if}
 			<div class="flex flex-col justify-center gap-2 large:order-2">
@@ -319,24 +302,32 @@
 					href="https://open.spotify.com/playlist/{collection.spotify_playlist_id}"
 					target="_blank"
 					rel="noopener noreferrer"
-					class="btn btn-outline btn-sm w-full border-[#1DB954] text-[#1DB954]"
+					class="btn w-full border-[#1DB954] text-[#1DB954] btn-outline btn-sm"
 				>
 					Open in Spotify
 				</a>
 				<div class="grid grid-cols-2 gap-2 tablet:grid-cols-1">
-					<button class="btn btn-primary btn-sm" onclick={() => showTriviaModal = true}>Play Trivia</button>
-					<button class="btn btn-secondary btn-sm" onclick={() => showPairsModal = true}>Play Pairs</button>
-					<button class="btn btn-accent btn-sm" disabled={unclaimedRewards === 0} onclick={() => showClaimModal = true}>
+					<button class="btn btn-sm btn-primary" onclick={() => (showTriviaModal = true)}
+						>Play Trivia</button
+					>
+					<button class="btn btn-sm btn-secondary" onclick={() => (showPairsModal = true)}
+						>Play Pairs</button
+					>
+					<button
+						class="btn btn-sm btn-accent"
+						disabled={unclaimedRewards === 0}
+						onclick={() => (showClaimModal = true)}
+					>
 						Claim Rewards{unclaimedRewards > 0 ? ` (${unclaimedRewards})` : ''}
 					</button>
 					{#if data.user}
 						<button
-							class="btn btn-outline btn-accent btn-sm"
+							class="btn btn-outline btn-sm btn-accent"
 							disabled={freeClaimable < 1 || freeClaimLoading}
 							onclick={claimFreeRewards}
 						>
 							{#if freeClaimLoading}
-								<span class="loading loading-spinner loading-xs"></span>
+								<span class="loading loading-xs loading-spinner"></span>
 							{:else}
 								Free Claim{freeClaimable > 0 ? ` (${freeClaimable})` : ''}
 							{/if}
@@ -344,7 +335,7 @@
 					{/if}
 				</div>
 				{#if data.user}
-					<span class="text-base-content/60 text-center text-xs">
+					<span class="text-center text-xs text-base-content/60">
 						{#if freeClaimable > 0}
 							{freeClaimable} free reward{freeClaimable > 1 ? 's' : ''} ready
 						{:else}
@@ -373,16 +364,27 @@
 				{/each}
 			</div>
 		{:else}
-			<p class="text-base-content/70 text-center">No tracks in this collection yet.</p>
+			<p class="text-center text-base-content/70">No tracks in this collection yet.</p>
 		{/if}
 	{/if}
 </div>
 
 {#if modalItem}
 	{@const mRarities = modalRarities}
-	<div class="modal modal-open" role="dialog" onclick={closeDetailModal} onkeydown={(e) => { if (e.key === 'Escape') closeDetailModal(); }}>
+	<div
+		class="modal-open modal"
+		role="dialog"
+		tabindex="-1"
+		onclick={closeDetailModal}
+		onkeydown={(e) => {
+			if (e.key === 'Escape') closeDetailModal();
+		}}
+	>
 		<div class="modal-box max-w-md" role="presentation" onclick={(e) => e.stopPropagation()}>
-			<button class="btn btn-circle btn-ghost btn-sm absolute top-2 right-2" onclick={closeDetailModal}>&#10005;</button>
+			<button
+				class="btn absolute top-2 right-2 btn-circle btn-ghost btn-sm"
+				onclick={closeDetailModal}>&#10005;</button
+			>
 			<div class="flex flex-col gap-4 pt-2">
 				<CollectionItem
 					item={modalItem}
@@ -392,12 +394,17 @@
 					rarityName={modalBestRarity?.rarity_name ?? null}
 				/>
 				{#if data.user && ownedItemIds.has(modalItem.id)}
-					<table class="table table-zebra table-xs w-full table-fixed border border-base-300">
+					<table class="table w-full table-fixed border border-base-300 table-zebra table-xs">
 						<thead>
 							<tr>
 								{#each allRarities as rarity}
-									<th class="border border-base-300 p-1 text-center" style:--rarity-color={rarity.color}>
-										<span class="text-[10px] font-semibold [color:var(--rarity-color)]">{rarity.name}</span>
+									<th
+										class="border border-base-300 p-1 text-center"
+										style:--rarity-color={rarity.color}
+									>
+										<span class="text-[10px] font-semibold [color:var(--rarity-color)]"
+											>{rarity.name}</span
+										>
 									</th>
 								{/each}
 							</tr>
@@ -405,28 +412,35 @@
 						<tbody>
 							<tr>
 								{#each allRarities as rarity}
-									{@const itemRarity = mRarities.find(r => r.rarity_id === rarity.id)}
+									{@const itemRarity = mRarities.find((r) => r.rarity_id === rarity.id)}
 									{@const copyCount = itemRarity?.copy_count ?? 0}
-									<td class="border border-base-300 p-1 text-center" style:--rarity-color={rarity.color}>
+									<td
+										class="border border-base-300 p-1 text-center"
+										style:--rarity-color={rarity.color}
+									>
 										<span class="text-xs font-bold [color:var(--rarity-color)]">{copyCount}x</span>
 									</td>
 								{/each}
 							</tr>
 							<tr>
 								{#each allRarities as rarity}
-									{@const itemRarity = mRarities.find(r => r.rarity_id === rarity.id)}
+									{@const itemRarity = mRarities.find((r) => r.rarity_id === rarity.id)}
 									{@const copyCount = itemRarity?.copy_count ?? 0}
 									{@const isMaxTier = rarity.level >= maxRarityLevel}
 									{@const mergeableCount = copyCount - (itemRarity?.is_stuck ? 1 : 0)}
 									{@const canMerge = !isMaxTier && mergeableCount >= 2}
 									<td class="border border-base-300 p-0.5" style:--rarity-color={rarity.color}>
 										<button
-											class="btn btn-xs w-full border-0 [background-color:var(--rarity-color)]"
+											class="btn w-full border-0 [background-color:var(--rarity-color)] btn-xs"
 											class:text-white={canMerge}
 											class:opacity-30={!canMerge}
 											disabled={!canMerge}
 											onclick={() => mergeItem(modalItem!.id, rarity.id)}
-											title={isMaxTier ? `${rarity.name} (max tier)` : canMerge ? `Merge 2x ${rarity.name} into 1x next tier` : `${rarity.name}: need 2+ copies to merge`}
+											title={isMaxTier
+												? `${rarity.name} (max tier)`
+												: canMerge
+													? `Merge 2x ${rarity.name} into 1x next tier`
+													: `${rarity.name}: need 2+ copies to merge`}
 										>
 											Merge
 										</button>
@@ -435,18 +449,20 @@
 							</tr>
 							<tr>
 								{#each allRarities as rarity}
-									{@const itemRarity = mRarities.find(r => r.rarity_id === rarity.id)}
+									{@const itemRarity = mRarities.find((r) => r.rarity_id === rarity.id)}
 									{@const copyCount = itemRarity?.copy_count ?? 0}
 									{@const recyclableCount = copyCount - (itemRarity?.is_stuck ? 1 : 0)}
 									{@const canRecycle = recyclableCount >= 3}
 									<td class="border border-base-300 p-0.5" style:--rarity-color={rarity.color}>
 										<button
-											class="btn btn-xs w-full border-0 [background-color:var(--rarity-color)]"
+											class="btn w-full border-0 [background-color:var(--rarity-color)] btn-xs"
 											class:text-white={canRecycle}
 											class:opacity-30={!canRecycle}
 											disabled={!canRecycle}
 											onclick={() => recycleItem(modalItem!.id, rarity.id)}
-											title={canRecycle ? `Recycle 3x ${rarity.name} → ${rarity.level} card spawn${rarity.level > 1 ? 's' : ''}` : `${rarity.name}: need 3+ copies to recycle`}
+											title={canRecycle
+												? `Recycle 3x ${rarity.name} → ${rarity.level} card spawn${rarity.level > 1 ? 's' : ''}`
+												: `${rarity.name}: need 3+ copies to recycle`}
 										>
 											Recycle
 										</button>
@@ -462,15 +478,26 @@
 {/if}
 
 {#if showTriviaModal && collection}
-	<div class="modal modal-open" role="dialog" onclick={() => showTriviaModal = false} onkeydown={(e) => { if (e.key === 'Escape') showTriviaModal = false; }}>
+	<div
+		class="modal-open modal"
+		role="dialog"
+		tabindex="-1"
+		onclick={() => (showTriviaModal = false)}
+		onkeydown={(e) => {
+			if (e.key === 'Escape') showTriviaModal = false;
+		}}
+	>
 		<div class="modal-box max-w-2xl" role="presentation" onclick={(e) => e.stopPropagation()}>
-			<button class="btn btn-circle btn-ghost btn-sm absolute top-2 right-2" onclick={() => showTriviaModal = false}>&#10005;</button>
+			<button
+				class="btn absolute top-2 right-2 btn-circle btn-ghost btn-sm"
+				onclick={() => (showTriviaModal = false)}>&#10005;</button
+			>
 			{#key showTriviaModal}
 				<TriviaGame
 					collectionId={collection.id}
 					collectionName={collection.name}
 					user={data.user}
-					onBack={() => showTriviaModal = false}
+					onBack={() => (showTriviaModal = false)}
 					showBackButton={false}
 				/>
 			{/key}
@@ -479,15 +506,26 @@
 {/if}
 
 {#if showPairsModal && collection}
-	<div class="modal modal-open" role="dialog" onclick={() => showPairsModal = false} onkeydown={(e) => { if (e.key === 'Escape') showPairsModal = false; }}>
+	<div
+		class="modal-open modal"
+		role="dialog"
+		tabindex="-1"
+		onclick={() => (showPairsModal = false)}
+		onkeydown={(e) => {
+			if (e.key === 'Escape') showPairsModal = false;
+		}}
+	>
 		<div class="modal-box max-w-4xl" role="presentation" onclick={(e) => e.stopPropagation()}>
-			<button class="btn btn-circle btn-ghost btn-sm absolute top-2 right-2" onclick={() => showPairsModal = false}>&#10005;</button>
+			<button
+				class="btn absolute top-2 right-2 btn-circle btn-ghost btn-sm"
+				onclick={() => (showPairsModal = false)}>&#10005;</button
+			>
 			{#key showPairsModal}
 				<PairsGame
 					collectionId={collection.id}
 					collectionName={collection.name}
 					user={data.user}
-					onBack={() => showPairsModal = false}
+					onBack={() => (showPairsModal = false)}
 					showBackButton={false}
 				/>
 			{/key}
@@ -496,18 +534,33 @@
 {/if}
 
 {#if showProgressModal && allRarities.length > 0}
-	<div class="modal modal-open" role="dialog" onclick={() => showProgressModal = false} onkeydown={(e) => { if (e.key === 'Escape') showProgressModal = false; }}>
+	<div
+		class="modal-open modal"
+		role="dialog"
+		tabindex="-1"
+		onclick={() => (showProgressModal = false)}
+		onkeydown={(e) => {
+			if (e.key === 'Escape') showProgressModal = false;
+		}}
+	>
 		<div class="modal-box max-w-sm" role="presentation" onclick={(e) => e.stopPropagation()}>
-			<button class="btn btn-circle btn-ghost btn-sm absolute top-2 right-2" onclick={() => showProgressModal = false}>&#10005;</button>
+			<button
+				class="btn absolute top-2 right-2 btn-circle btn-ghost btn-sm"
+				onclick={() => (showProgressModal = false)}>&#10005;</button
+			>
 			<h3 class="mb-4 text-lg font-bold">Progress</h3>
 			<div class="flex flex-col gap-2">
 				{#each rarityProgress as rp}
 					<div class="flex flex-col gap-1 rounded-lg p-2" style:--rarity-color={rp.color}>
 						<div class="flex items-center justify-between">
 							<span class="text-xs font-semibold [color:var(--rarity-color)]">{rp.name}</span>
-							<span class="text-base-content/60 text-[10px]">{rp.owned}/{rp.total}</span>
+							<span class="text-[10px] text-base-content/60">{rp.owned}/{rp.total}</span>
 						</div>
-						<progress class="progress h-1.5 w-full [color:var(--rarity-color)]" value={rp.owned} max={rp.total}></progress>
+						<progress
+							class="progress h-1.5 w-full [color:var(--rarity-color)]"
+							value={rp.owned}
+							max={rp.total}
+						></progress>
 					</div>
 				{/each}
 			</div>

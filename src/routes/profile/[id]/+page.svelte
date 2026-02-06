@@ -18,7 +18,9 @@
 	let { data } = $props();
 
 	let profileUser = $state<ProfileUser | null>(null);
-	let isOwnProfile = $derived(data.user && profileUser ? data.user.spotifyId === profileUser.spotify_id : false);
+	let isOwnProfile = $derived(
+		data.user && profileUser ? data.user.spotifyId === profileUser.spotify_id : false
+	);
 	let collections = $state<CollectionWithCount[]>([]);
 	let progressMap = $state<Map<number, CollectionProgress>>(new Map());
 	let loading = $state(true);
@@ -58,7 +60,7 @@
 <div class="flex min-h-screen w-full flex-col gap-6 p-4 tablet:p-8">
 	{#if loading}
 		<div class="flex flex-1 items-center justify-center">
-			<span class="loading loading-spinner loading-lg"></span>
+			<span class="loading loading-lg loading-spinner"></span>
 		</div>
 	{:else if errorMsg}
 		<div class="alert alert-error">
@@ -73,23 +75,23 @@
 					class="h-20 w-20 rounded-full object-cover"
 				/>
 			{:else}
-				<div class="bg-base-300 flex h-20 w-20 items-center justify-center rounded-full">
-					<span class="text-base-content/30 text-3xl">?</span>
+				<div class="flex h-20 w-20 items-center justify-center rounded-full bg-base-300">
+					<span class="text-3xl text-base-content/30">?</span>
 				</div>
 			{/if}
 			<div>
 				<h1 class="text-2xl font-bold">{profileUser.display_name ?? 'Unknown User'}</h1>
-				<p class="text-base-content/70 text-sm">
+				<p class="text-sm text-base-content/70">
 					{collections.length} collection{collections.length !== 1 ? 's' : ''}
 				</p>
 			</div>
 			{#if isOwnProfile}
-				<a href="/import" class="btn btn-primary btn-sm ml-auto">Add Collections</a>
+				<a href="/import" class="btn ml-auto btn-sm btn-primary">Add Collections</a>
 			{/if}
 		</div>
 
 		{#if collections.length === 0}
-			<p class="text-base-content/70 text-center">This user has no collections yet.</p>
+			<p class="text-center text-base-content/70">This user has no collections yet.</p>
 		{:else}
 			<div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
 				{#each collections as collection (collection.id)}

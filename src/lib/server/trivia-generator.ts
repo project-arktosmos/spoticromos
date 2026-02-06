@@ -134,17 +134,17 @@ function formatVerification(
 	template: string,
 	values: Record<string, string | number | undefined>
 ): string {
-	let result = template.replace(/\{(\w+)\}/g, (match, key) => {
+	const result = template.replace(/\{(\w+)\}/g, (match, key) => {
 		const val = values[key];
 		return val !== undefined && val !== '' ? String(val) : '';
 	});
-	return result.replace(/\s*\(\s*\)/g, '').replace(/\s{2,}/g, ' ').trim();
+	return result
+		.replace(/\s*\(\s*\)/g, '')
+		.replace(/\s{2,}/g, ' ')
+		.trim();
 }
 
-function getVerificationFormat(
-	type: TriviaQuestionType,
-	config: VerificationConfig
-): string {
+function getVerificationFormat(type: TriviaQuestionType, config: VerificationConfig): string {
 	return config.verificationFormat ?? DEFAULT_VERIFICATION_FORMATS[type];
 }
 
@@ -180,9 +180,10 @@ function generateWhichCameFirst(
 
 		const subject = config.subject === 'album' ? 'album' : 'song';
 		const opts: TriviaOption[] = picked.map((item) => ({
-			label: subject === 'album'
-				? (item.album_name ?? item.track_name)
-				: `${item.track_name} by ${primaryArtist(item)}`,
+			label:
+				subject === 'album'
+					? (item.album_name ?? item.track_name)
+					: `${item.track_name} by ${primaryArtist(item)}`,
 			meta: item.album_release_year ?? undefined,
 			imageUrl: item.album_cover_url,
 			verification: formatVerification(vfmt, { year: item.album_release_year ?? '' })
@@ -234,7 +235,8 @@ function generateWhatYearReleased(
 		const artist = primaryArtist(item);
 		const opts: TriviaOption[] = yearArr.map((y) => ({
 			label: String(y),
-			verification: y === correctYear ? formatVerification(vfmt, { track: item.track_name, artist }) : undefined
+			verification:
+				y === correctYear ? formatVerification(vfmt, { track: item.track_name, artist }) : undefined
 		}));
 		const correctIdx = yearArr.indexOf(correctYear);
 		const { options, correctIndex } = shuffleWithCorrect(opts, correctIdx);
@@ -283,7 +285,14 @@ function generateWhatAlbumForSong(
 
 		const opts: TriviaOption[] = [correctAlbum, ...distractors].map((a, idx) => ({
 			label: a,
-			verification: idx === 0 ? formatVerification(vfmt, { track: item.track_name, album: correctAlbum, year: item.album_release_year ?? '' }) : undefined
+			verification:
+				idx === 0
+					? formatVerification(vfmt, {
+							track: item.track_name,
+							album: correctAlbum,
+							year: item.album_release_year ?? ''
+						})
+					: undefined
 		}));
 		const { options, correctIndex } = shuffleWithCorrect(opts, 0);
 
@@ -363,9 +372,7 @@ function generateArtistFirstAlbum(
 		artistAlbums.get(artist)!.set(item.album_name, item.album_release_year);
 	}
 
-	const eligible = [...artistAlbums.entries()].filter(
-		([, albums]) => albums.size >= OPTION_COUNT
-	);
+	const eligible = [...artistAlbums.entries()].filter(([, albums]) => albums.size >= OPTION_COUNT);
 	if (eligible.length === 0) return [];
 
 	const results: GeneratedTriviaQuestion[] = [];
@@ -428,7 +435,8 @@ function generateWhoSangLyrics(
 		const paragraphs = item
 			.lyrics!.split(/\n\s*\n/)
 			.map((p) =>
-				p.split('\n')
+				p
+					.split('\n')
 					.map((l) => l.trim())
 					.filter((l) => l.length > 0 && !l.startsWith('['))
 					.join(' / ')
@@ -494,13 +502,15 @@ function generateWhatLabelReleasedIt(
 
 		const opts: TriviaOption[] = [correctLabel, ...distractors].map((l, idx) => ({
 			label: l,
-			verification: idx === 0 ? formatVerification(vfmt, { track: item.track_name, label: correctLabel }) : undefined
+			verification:
+				idx === 0
+					? formatVerification(vfmt, { track: item.track_name, label: correctLabel })
+					: undefined
 		}));
 		const { options, correctIndex } = shuffleWithCorrect(opts, 0);
 
 		const subject = config.subject === 'album' ? 'album' : 'song';
-		const name =
-			subject === 'album' ? (item.album_name ?? item.track_name) : item.track_name;
+		const name = subject === 'album' ? (item.album_name ?? item.track_name) : item.track_name;
 
 		results.push({
 			questionId,
@@ -566,7 +576,13 @@ function generateFinishTheLyric(
 
 		const opts: TriviaOption[] = [pair.nextLine, ...distractorLines].map((line, idx) => ({
 			label: line,
-			verification: idx === 0 ? formatVerification(vfmt, { track: pair.item.track_name, artist: primaryArtist(pair.item) }) : undefined
+			verification:
+				idx === 0
+					? formatVerification(vfmt, {
+							track: pair.item.track_name,
+							artist: primaryArtist(pair.item)
+						})
+					: undefined
 		}));
 		const { options, correctIndex } = shuffleWithCorrect(opts, 0);
 
@@ -626,7 +642,8 @@ function generateWhatSongFromLyrics(
 
 		const opts: TriviaOption[] = [correctTitle, ...distractors].map((t, idx) => ({
 			label: t,
-			verification: idx === 0 ? formatVerification(vfmt, { artist: primaryArtist(item) }) : undefined
+			verification:
+				idx === 0 ? formatVerification(vfmt, { artist: primaryArtist(item) }) : undefined
 		}));
 		const { options, correctIndex } = shuffleWithCorrect(opts, 0);
 
@@ -671,7 +688,8 @@ function generateNameTheAlbumFromCover(
 
 		const opts: TriviaOption[] = [correctAlbum, ...distractors].map((a, idx) => ({
 			label: a,
-			verification: idx === 0 ? formatVerification(vfmt, { artist: primaryArtist(item) }) : undefined
+			verification:
+				idx === 0 ? formatVerification(vfmt, { artist: primaryArtist(item) }) : undefined
 		}));
 		const { options, correctIndex } = shuffleWithCorrect(opts, 0);
 
@@ -716,9 +734,7 @@ function generateOddOneOut(
 
 		const threeSongs = pickRandom(mainSongs, 3);
 
-		const otherAlbums = [...albumGroups.entries()].filter(
-			([name]) => name !== mainAlbum
-		);
+		const otherAlbums = [...albumGroups.entries()].filter(([name]) => name !== mainAlbum);
 		if (otherAlbums.length === 0) continue;
 		const [oddAlbum, oddSongs] = pickRandom(otherAlbums, 1)[0];
 		const oddSong = pickRandom(oddSongs, 1)[0];
@@ -777,7 +793,8 @@ function generateWhatGenreForArtist(
 		const { options, correctIndex } = shuffleWithCorrect(opts, 0);
 
 		const defaultImg = artist.image_url ?? null;
-		const questionImage = config.showImage === 'album' ? null : (config.showImage === 'artist' ? defaultImg : defaultImg);
+		const questionImage =
+			config.showImage === 'album' ? null : config.showImage === 'artist' ? defaultImg : defaultImg;
 
 		results.push({
 			questionId,
@@ -797,9 +814,7 @@ function generateMostFollowedArtist(
 	artistsMeta: CollectionArtistWithMetadata[],
 	questionId: number
 ): GeneratedTriviaQuestion[] {
-	const withFollowers = artistsMeta.filter(
-		(a) => a.followers != null && a.followers > 0
-	);
+	const withFollowers = artistsMeta.filter((a) => a.followers != null && a.followers > 0);
 	if (withFollowers.length < OPTION_COUNT) return [];
 
 	const results: GeneratedTriviaQuestion[] = [];
@@ -820,16 +835,18 @@ function generateMostFollowedArtist(
 
 		const opts: TriviaOption[] = picked.map((a) => ({
 			label: a.name,
-			verification: a.id === correctArtist.id
-				? formatVerification(vfmt, { followers: (a.followers ?? 0).toLocaleString() })
-				: undefined,
+			verification:
+				a.id === correctArtist.id
+					? formatVerification(vfmt, { followers: (a.followers ?? 0).toLocaleString() })
+					: undefined,
 			imageUrl: a.image_url
 		}));
 
 		const correctIdx = picked.indexOf(correctArtist);
 		const { options, correctIndex } = shuffleWithCorrect(opts, correctIdx);
 
-		const mostFollowedImg = config.showImage === 'artist' ? (correctArtist.image_url ?? null) : null;
+		const mostFollowedImg =
+			config.showImage === 'artist' ? (correctArtist.image_url ?? null) : null;
 
 		results.push({
 			questionId,
@@ -930,11 +947,7 @@ function generateForQuestion(
 			);
 			break;
 		case TriviaQuestionType.OddOneOut:
-			results = generateOddOneOut(
-				config as OddOneOutConfig & GeneratorConfig,
-				items,
-				question.id
-			);
+			results = generateOddOneOut(config as OddOneOutConfig & GeneratorConfig, items, question.id);
 			break;
 		case TriviaQuestionType.WhatGenreForArtist:
 			results = generateWhatGenreForArtist(

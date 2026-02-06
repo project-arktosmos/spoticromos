@@ -5,7 +5,11 @@
 		DEFAULT_VERIFICATION_FORMATS,
 		VERIFICATION_PLACEHOLDERS
 	} from '$types/trivia.type';
-	import type { TriviaQuestionConfig, ImageDisplayConfig, VerificationConfig } from '$types/trivia.type';
+	import type {
+		TriviaQuestionConfig,
+		ImageDisplayConfig,
+		VerificationConfig
+	} from '$types/trivia.type';
 
 	interface Props {
 		questionType: TriviaQuestionType;
@@ -20,7 +24,10 @@
 		onchange({ ...config, [field]: value } as TriviaQuestionConfig);
 	}
 
-	function updateOptionalField(field: keyof ImageDisplayConfig | keyof VerificationConfig, value: string) {
+	function updateOptionalField(
+		field: keyof ImageDisplayConfig | keyof VerificationConfig,
+		value: string
+	) {
 		if (value === '') {
 			const { [field]: _, ...rest } = config as unknown as Record<string, unknown>;
 			onchange(rest as unknown as TriviaQuestionConfig);
@@ -31,14 +38,14 @@
 
 	let hasSubject = $derived(
 		questionType === TriviaQuestionType.WhichCameFirst ||
-		questionType === TriviaQuestionType.WhatYearReleased ||
-		questionType === TriviaQuestionType.WhatArtistForTitle ||
-		questionType === TriviaQuestionType.WhatLabelReleasedIt
+			questionType === TriviaQuestionType.WhatYearReleased ||
+			questionType === TriviaQuestionType.WhatArtistForTitle ||
+			questionType === TriviaQuestionType.WhatLabelReleasedIt
 	);
 
 	let hasFragmentLength = $derived(
 		questionType === TriviaQuestionType.WhoSangLyrics ||
-		questionType === TriviaQuestionType.WhatSongFromLyrics
+			questionType === TriviaQuestionType.WhatSongFromLyrics
 	);
 
 	let imgConfig = $derived(config as ImageDisplayConfig);
@@ -57,7 +64,7 @@
 				<select
 					value={(config as { subject: string }).subject}
 					onchange={(e) => updateField('subject', (e.target as HTMLSelectElement).value)}
-					class="select select-bordered select-sm w-full"
+					class="select-bordered select w-full select-sm"
 				>
 					<option value="song">Song</option>
 					<option value="album">Album</option>
@@ -75,8 +82,9 @@
 					min="3"
 					max="20"
 					value={(config as { fragmentLength: number }).fragmentLength}
-					oninput={(e) => updateField('fragmentLength', Number((e.target as HTMLInputElement).value) || 8)}
-					class="input input-bordered input-sm w-full"
+					oninput={(e) =>
+						updateField('fragmentLength', Number((e.target as HTMLInputElement).value) || 8)}
+					class="input-bordered input input-sm w-full"
 				/>
 			</label>
 		{/if}
@@ -88,7 +96,7 @@
 			<select
 				value={imgConfig.showImage ?? ''}
 				onchange={(e) => updateOptionalField('showImage', (e.target as HTMLSelectElement).value)}
-				class="select select-bordered select-sm w-full"
+				class="select-bordered select w-full select-sm"
 			>
 				<option value="">Default</option>
 				<option value="album">Album cover</option>
@@ -102,8 +110,9 @@
 			</div>
 			<select
 				value={imgConfig.showOptionImages ?? ''}
-				onchange={(e) => updateOptionalField('showOptionImages', (e.target as HTMLSelectElement).value)}
-				class="select select-bordered select-sm w-full"
+				onchange={(e) =>
+					updateOptionalField('showOptionImages', (e.target as HTMLSelectElement).value)}
+				class="select-bordered select w-full select-sm"
 			>
 				<option value="">None</option>
 				<option value="album">Album covers</option>
@@ -116,15 +125,16 @@
 		<div class="label">
 			<span class="label-text text-xs">Verification format</span>
 			<span class="label-text-alt text-xs text-base-content/50">
-				{placeholders.map(p => `{${p}}`).join(', ')}
+				{placeholders.map((p) => `{${p}}`).join(', ')}
 			</span>
 		</div>
 		<input
 			type="text"
 			value={verificationConfig.verificationFormat ?? ''}
 			placeholder={defaultFormat}
-			oninput={(e) => updateOptionalField('verificationFormat', (e.target as HTMLInputElement).value.trim())}
-			class="input input-bordered input-sm w-full"
+			oninput={(e) =>
+				updateOptionalField('verificationFormat', (e.target as HTMLInputElement).value.trim())}
+			class="input-bordered input input-sm w-full"
 		/>
 	</label>
 </div>

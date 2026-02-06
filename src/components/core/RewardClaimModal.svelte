@@ -82,15 +82,15 @@
 </script>
 
 {#if open}
-	<dialog class="modal modal-open">
-		<div class="modal-box md:h-[90vh] md:w-[90vw] md:max-w-none md:max-h-none">
+	<dialog class="modal-open modal">
+		<div class="modal-box md:h-[90vh] md:max-h-none md:w-[90vw] md:max-w-none">
 			<div class="mb-4 flex items-center justify-between">
 				<h3 class="text-lg font-bold">{collectionName}</h3>
 				<span class="badge badge-primary">{unrevealedCount} remaining</span>
 			</div>
 
 			{#if errorMsg}
-				<div class="alert alert-error mb-4">
+				<div class="mb-4 alert alert-error">
 					<span>{errorMsg}</span>
 				</div>
 			{/if}
@@ -106,17 +106,17 @@
 					{:else}
 						<button
 							class={classNames(
-								'flex w-full items-center justify-center overflow-hidden rounded-lg border-2 border-black bg-base-300 min-h-48',
+								'flex min-h-48 w-full items-center justify-center overflow-hidden rounded-lg border-2 border-black bg-base-300',
 								'cursor-pointer transition-all duration-300 hover:scale-105',
-								{ 'animate-pulse pointer-events-none': card.loading }
+								{ 'pointer-events-none animate-pulse': card.loading }
 							)}
 							disabled={card.loading}
 							onclick={() => claimCard(i)}
 						>
 							{#if card.loading}
-								<span class="loading loading-spinner loading-lg"></span>
+								<span class="loading loading-lg loading-spinner"></span>
 							{:else}
-								<span class="text-base-content/20 text-7xl font-bold">?</span>
+								<span class="text-7xl font-bold text-base-content/20">?</span>
 							{/if}
 						</button>
 					{/if}
@@ -126,19 +126,19 @@
 			<div class="modal-action flex items-center justify-between">
 				{#if unrevealedCount > 0}
 					<button
-						class={classNames('btn btn-secondary btn-sm', { loading: claimingAll })}
+						class={classNames('btn btn-sm btn-secondary', { loading: claimingAll })}
 						disabled={claimingAll}
 						onclick={claimAll}
 					>
 						{#if claimingAll}
-							<span class="loading loading-spinner loading-xs"></span>
+							<span class="loading loading-xs loading-spinner"></span>
 						{/if}
 						Claim All ({unrevealedCount})
 					</button>
 				{:else}
 					<div></div>
 				{/if}
-				<button class="btn btn-primary btn-sm" onclick={handleClose}>Close</button>
+				<button class="btn btn-sm btn-primary" onclick={handleClose}>Close</button>
 			</div>
 		</div>
 		<form method="dialog" class="modal-backdrop">

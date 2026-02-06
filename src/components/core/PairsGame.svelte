@@ -11,27 +11,31 @@
 		showBackButton?: boolean;
 	}
 
-	let {
-		collectionId,
-		collectionName,
-		user,
-		onBack,
-		showBackButton = true
-	}: Props = $props();
+	let { collectionId, collectionName, user, onBack, showBackButton = true }: Props = $props();
 
 	// svelte-ignore state_referenced_locally
 	const game = new PairsGameService(collectionId, user);
 
 	const gridColsMap: Record<number, string> = {
-		3: 'grid-cols-3', 4: 'grid-cols-4', 5: 'grid-cols-5',
-		6: 'grid-cols-6', 7: 'grid-cols-7', 8: 'grid-cols-8',
-		9: 'grid-cols-9', 10: 'grid-cols-10', 11: 'grid-cols-11',
+		3: 'grid-cols-3',
+		4: 'grid-cols-4',
+		5: 'grid-cols-5',
+		6: 'grid-cols-6',
+		7: 'grid-cols-7',
+		8: 'grid-cols-8',
+		9: 'grid-cols-9',
+		10: 'grid-cols-10',
+		11: 'grid-cols-11',
 		12: 'grid-cols-12'
 	};
 
 	const maxWidthMap: Record<number, string> = {
-		3: 'max-w-sm', 4: 'max-w-xl', 5: 'max-w-2xl',
-		6: 'max-w-3xl', 7: 'max-w-4xl', 8: 'max-w-5xl'
+		3: 'max-w-sm',
+		4: 'max-w-xl',
+		5: 'max-w-2xl',
+		6: 'max-w-3xl',
+		7: 'max-w-4xl',
+		8: 'max-w-5xl'
 	};
 
 	let gridCols = $derived(gridColsMap[Math.min(game.gridSize, 12)] ?? 'grid-cols-12');
@@ -42,10 +46,9 @@
 
 {#if game.loading}
 	<div class="flex flex-1 flex-col items-center justify-center gap-3 py-8">
-		<span class="loading loading-spinner loading-lg"></span>
-		<p class="text-base-content/60 text-sm">Loading pairs...</p>
+		<span class="loading loading-lg loading-spinner"></span>
+		<p class="text-sm text-base-content/60">Loading pairs...</p>
 	</div>
-
 {:else if game.gameStarted}
 	<div class="flex flex-col gap-4">
 		<div class="flex items-center gap-2">
@@ -61,15 +64,21 @@
 				<span class="font-semibold">{game.matchedPairs}/{game.totalPairs} pairs</span>
 				<div class="flex items-center gap-1">
 					{#each Array(game.maxErrors) as _, i}
-						<span class={classNames('text-xl transition-opacity duration-300', {
-							'text-error': i < game.maxErrors - game.errors,
-							'text-base-content/20': i >= game.maxErrors - game.errors
-						})}>&#9829;</span>
+						<span
+							class={classNames('text-xl transition-opacity duration-300', {
+								'text-error': i < game.maxErrors - game.errors,
+								'text-base-content/20': i >= game.maxErrors - game.errors
+							})}>&#9829;</span
+						>
 					{/each}
 				</div>
 				<span class="text-base-content/60">{game.moves} moves</span>
 			</div>
-			<button class="btn btn-ghost btn-sm" onclick={() => game.startGame()} disabled={game.gameWon || game.gameLost}>Restart</button>
+			<button
+				class="btn btn-ghost btn-sm"
+				onclick={() => game.startGame()}
+				disabled={game.gameWon || game.gameLost}>Restart</button
+			>
 		</div>
 
 		{#if game.gameWon}
@@ -105,7 +114,9 @@
 				</div>
 				<div class="flex gap-2">
 					<button class="btn btn-sm" onclick={() => game.retryLevel()}>
-						Try Again ({Math.max(game.MIN_GRID, game.gridSize - 1)}x{game.gridRows(Math.max(game.MIN_GRID, game.gridSize - 1))})
+						Try Again ({Math.max(game.MIN_GRID, game.gridSize - 1)}x{game.gridRows(
+							Math.max(game.MIN_GRID, game.gridSize - 1)
+						)})
 					</button>
 					{#if onBack}
 						<button class="btn btn-ghost btn-sm" onclick={onBack}>Close</button>
@@ -133,7 +144,6 @@
 			{/each}
 		</div>
 	</div>
-
 {:else if game.errorMsg}
 	<div class="flex flex-col gap-4">
 		{#if showBackButton && onBack}

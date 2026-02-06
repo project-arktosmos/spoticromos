@@ -13,7 +13,10 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 		await initializeSchema();
 
 		const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10) || 1);
-		const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '12', 10) || 12));
+		const limit = Math.min(
+			100,
+			Math.max(1, parseInt(url.searchParams.get('limit') || '12', 10) || 12)
+		);
 		const search = url.searchParams.get('search') || '';
 
 		const result = await findCollections({ page, limit, search });

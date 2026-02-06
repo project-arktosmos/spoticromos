@@ -7,7 +7,10 @@
  */
 
 import { initializeSchema } from '$lib/server/schema';
-import { findCollectionByPlaylistId, findCollectionTrackIds } from '$lib/server/repositories/collection.repository';
+import {
+	findCollectionByPlaylistId,
+	findCollectionTrackIds
+} from '$lib/server/repositories/collection.repository';
 import { resolveToken, importPlaylist } from './lib/import-core';
 
 function extractPlaylistId(input: string): string | null {
@@ -62,7 +65,9 @@ async function main() {
 	const existing = await findCollectionByPlaylistId(playlistId);
 	if (existing) {
 		const enrichedIds = await findCollectionTrackIds(existing.id);
-		console.log(`\n  Collection already exists (id: ${existing.id}, ${enrichedIds.size} tracks enriched)`);
+		console.log(
+			`\n  Collection already exists (id: ${existing.id}, ${enrichedIds.size} tracks enriched)`
+		);
 		existingCollectionId = existing.id;
 	}
 

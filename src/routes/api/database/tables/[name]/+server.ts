@@ -15,17 +15,20 @@ export const GET: RequestHandler = async ({ params, url }) => {
 	}
 
 	const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10) || 1);
-	const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '25', 10) || 25));
+	const limit = Math.min(
+		100,
+		Math.max(1, parseInt(url.searchParams.get('limit') || '25', 10) || 25)
+	);
 	const offset = (page - 1) * limit;
 
 	try {
 		const [countResult] = await query<RowDataPacket[]>(`SELECT COUNT(*) as total FROM \`${name}\``);
 		const total = countResult[0].total as number;
 
-		const [rows] = await query<RowDataPacket[]>(
-			`SELECT * FROM \`${name}\` LIMIT ? OFFSET ?`,
-			[limit, offset]
-		);
+		const [rows] = await query<RowDataPacket[]>(`SELECT * FROM \`${name}\` LIMIT ? OFFSET ?`, [
+			limit,
+			offset
+		]);
 
 		const columns = rows.length > 0 ? Object.keys(rows[0]) : [];
 

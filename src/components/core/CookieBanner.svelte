@@ -13,21 +13,21 @@
 {#if visible}
 	<div
 		class={classNames(
-			'fixed bottom-0 left-0 right-0 z-40',
+			'fixed right-0 bottom-0 left-0 z-40',
 			'border-t border-base-content/10 bg-base-300 p-4 shadow-lg'
 		)}
 	>
 		<div class="mx-auto flex max-w-4xl flex-col gap-3">
-			<p class="text-base-content/80 text-sm">
+			<p class="text-sm text-base-content/80">
 				{$_('cookie.message')}
 			</p>
-			<p class="text-base-content/60 text-xs">
+			<p class="text-xs text-base-content/60">
 				{$_('cookie.analyticsInfo')}
-				<a href="/legal/cookies" class="link link-primary text-xs">
+				<a href="/legal/cookies" class="link text-xs link-primary">
 					{$_('cookie.learnMore')}
 				</a>
 				&middot;
-				<a href="/legal/privacy" class="link link-primary text-xs">
+				<a href="/legal/privacy" class="link text-xs link-primary">
 					{$_('cookie.privacyPolicy')}
 				</a>
 			</p>
@@ -35,7 +35,7 @@
 				<button class="btn btn-ghost btn-sm" onclick={acceptEssentialOnly}>
 					{$_('cookie.essentialOnly')}
 				</button>
-				<button class="btn btn-primary btn-sm" onclick={acceptAllCookies}>
+				<button class="btn btn-sm btn-primary" onclick={acceptAllCookies}>
 					{$_('cookie.acceptAll')}
 				</button>
 			</div>

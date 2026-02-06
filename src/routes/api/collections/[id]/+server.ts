@@ -56,7 +56,17 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 
 		const rarities = await findAllRarities();
 
-		return json({ collection, items, ownedItemIds, ownedItemRarities, stuckItemIds, rarities, unclaimedRewards, freeClaimable, freeClaimCountdown });
+		return json({
+			collection,
+			items,
+			ownedItemIds,
+			ownedItemRarities,
+			stuckItemIds,
+			rarities,
+			unclaimedRewards,
+			freeClaimable,
+			freeClaimCountdown
+		});
 	} catch (err) {
 		console.error('Failed to fetch collection:', err);
 		const message = err instanceof Error ? err.message : 'Unknown error';

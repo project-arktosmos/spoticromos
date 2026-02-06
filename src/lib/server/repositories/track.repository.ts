@@ -7,10 +7,9 @@ interface TrackRow extends RowDataPacket {
 }
 
 export async function findTrackById(spotifyId: string): Promise<SpotifyTrack | null> {
-	const [rows] = await query<TrackRow[]>(
-		'SELECT raw_json FROM tracks WHERE spotify_id = ?',
-		[spotifyId]
-	);
+	const [rows] = await query<TrackRow[]>('SELECT raw_json FROM tracks WHERE spotify_id = ?', [
+		spotifyId
+	]);
 	if (rows.length === 0) return null;
 	const raw = rows[0].raw_json;
 	return (typeof raw === 'string' ? JSON.parse(raw) : raw) as SpotifyTrack;

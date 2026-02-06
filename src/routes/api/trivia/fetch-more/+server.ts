@@ -35,10 +35,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	let nextQuestions = serveNextBatch(session);
 
 	// If pool is running low, generate more
-	if (
-		session.questions.length - session.servedCount < 5 &&
-		!session.fetchExhausted
-	) {
+	if (session.questions.length - session.servedCount < 5 && !session.fetchExhausted) {
 		try {
 			const { questions } = await generateTriviaQuestions(session.collectionId);
 			addQuestionsToSession(session, shuffleArray(questions));
@@ -49,8 +46,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		}
 	}
 
-	const exhausted =
-		session.fetchExhausted && session.servedCount >= session.questions.length;
+	const exhausted = session.fetchExhausted && session.servedCount >= session.questions.length;
 
 	return json({ questions: nextQuestions, exhausted });
 };

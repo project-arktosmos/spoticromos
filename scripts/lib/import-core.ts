@@ -8,8 +8,15 @@
 import { getClientToken, refreshUserToken } from '$lib/server/spotify-token';
 import { spotifyFetch } from '$lib/server/spotify-api';
 import { fetchPlaylistFromEmbed, fetchAllTrackIdsFromSpclient } from '$lib/server/spotify-embed';
-import { saveCollection, findCollectionTrackIds } from '$lib/server/repositories/collection.repository';
-import { ensureUserExists, findUserBySpotifyId, updateUserTokens } from '$lib/server/repositories/user.repository';
+import {
+	saveCollection,
+	findCollectionTrackIds
+} from '$lib/server/repositories/collection.repository';
+import {
+	ensureUserExists,
+	findUserBySpotifyId,
+	updateUserTokens
+} from '$lib/server/repositories/user.repository';
 import { enrichTrack } from '$lib/server/enrichment';
 import type { SpotifyPlaylist, SpotifyTrack, SpotifyPaginatedResponse } from '$types/spotify.type';
 
@@ -19,7 +26,25 @@ import type { SpotifyPlaylist, SpotifyTrack, SpotifyPaginatedResponse } from '$t
 
 export interface TokenHandle {
 	token: string;
-	getToken: () => Promise<string>;
+	getToken: (force?: boolean) => Promise<string>;
+}
+
+/**
+ * Wrapper around `spotifyFetch` that automatically refreshes the token on 401
+ * and retries the request once.
+ */
+export async function tokenFetch<T>(endpoint: string, handle: TokenHandle): Promise<T> {
+	try {
+		return await spotifyFetch<T>(endpoint, handle.token);
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : '';
+		if (msg.startsWith('401')) {
+			console.log('  Token expired, refreshing...');
+			handle.token = await handle.getToken(true);
+			return spotifyFetch<T>(endpoint, handle.token);
+		}
+		throw err;
+	}
 }
 
 export async function resolveToken(userId: string | null): Promise<TokenHandle> {
@@ -41,37 +66,45 @@ export async function resolveToken(userId: string | null): Promise<TokenHandle> 
 		process.exit(1);
 	}
 
-	if (user.access_token && user.token_expires_at && Date.now() < user.token_expires_at - 60_000) {
+	// Mutable state — properly chains refresh tokens across multiple refreshes
+	let currentRefreshToken = user.refresh_token;
+	let expiresAt = user.token_expires_at ?? 0;
+
+	async function refresh(): Promise<string> {
+		const refreshed = await refreshUserToken(currentRefreshToken);
+		if (!refreshed) throw new Error('Failed to refresh user token');
+		currentRefreshToken = refreshed.refreshToken;
+		expiresAt = refreshed.expiresAt;
+		await updateUserTokens(
+			userId!,
+			refreshed.accessToken,
+			refreshed.refreshToken,
+			refreshed.expiresAt
+		);
+		return refreshed.accessToken;
+	}
+
+	// Determine initial token
+	let initialToken: string;
+	if (user.access_token && Date.now() < expiresAt - 60_000) {
 		console.log(`Using stored token for user: ${user.display_name ?? userId}`);
-		return {
-			token: user.access_token,
-			getToken: async () => {
-				const refreshed = await refreshUserToken(user.refresh_token!);
-				if (!refreshed) throw new Error('Failed to refresh user token');
-				await updateUserTokens(userId, refreshed.accessToken, refreshed.refreshToken, refreshed.expiresAt);
-				return refreshed.accessToken;
-			}
-		};
+		initialToken = user.access_token;
+	} else {
+		console.log(`Refreshing token for user: ${user.display_name ?? userId}`);
+		initialToken = await refresh();
 	}
 
-	console.log(`Refreshing token for user: ${user.display_name ?? userId}`);
-	const refreshed = await refreshUserToken(user.refresh_token);
-	if (!refreshed) {
-		console.error('Failed to refresh Spotify token. The user may need to log in again via the UI.');
-		process.exit(1);
-	}
-
-	await updateUserTokens(userId, refreshed.accessToken, refreshed.refreshToken, refreshed.expiresAt);
-
-	return {
-		token: refreshed.accessToken,
-		getToken: async () => {
-			const r = await refreshUserToken(refreshed.refreshToken);
-			if (!r) throw new Error('Failed to refresh user token');
-			await updateUserTokens(userId, r.accessToken, r.refreshToken, r.expiresAt);
-			return r.accessToken;
+	const handle: TokenHandle = {
+		token: initialToken,
+		getToken: async (force = false) => {
+			if (!force && Date.now() < expiresAt - 120_000) return handle.token;
+			console.log('  Refreshing Spotify token...');
+			handle.token = await refresh();
+			return handle.token;
 		}
 	};
+
+	return handle;
 }
 
 // ---------------------------------------------------------------------------
@@ -89,19 +122,19 @@ export interface PlaylistData {
 
 export async function fetchPlaylistViaApi(
 	playlistId: string,
-	token: string
+	handle: TokenHandle
 ): Promise<PlaylistData | null> {
 	try {
-		const playlist = await spotifyFetch<SpotifyPlaylist>(`/playlists/${playlistId}`, token);
+		const playlist = await tokenFetch<SpotifyPlaylist>(`/playlists/${playlistId}`, handle);
 
 		const allItems: Array<{ added_at: string; track: SpotifyTrack }> = [];
 		let offset = 0;
 		const limit = 100;
 
 		while (true) {
-			const page = await spotifyFetch<
+			const page = await tokenFetch<
 				SpotifyPaginatedResponse<{ added_at: string; track: SpotifyTrack }>
-			>(`/playlists/${playlistId}/tracks?limit=${limit}&offset=${offset}`, token);
+			>(`/playlists/${playlistId}/tracks?limit=${limit}&offset=${offset}`, handle);
 
 			allItems.push(...page.items.filter((item) => item.track && !item.track.is_local));
 			offset += page.items.length;
@@ -125,7 +158,7 @@ export async function fetchPlaylistViaApi(
 
 export async function fetchPlaylistViaEmbed(
 	playlistId: string,
-	token: string
+	handle: TokenHandle
 ): Promise<PlaylistData | null> {
 	const embed = await fetchPlaylistFromEmbed(playlistId);
 	if (!embed) return null;
@@ -155,7 +188,8 @@ export async function fetchPlaylistViaEmbed(
 
 	// Use the anonymous embed token for batch track resolution when available,
 	// otherwise fall back to the caller-supplied token.
-	const resolveToken = embed.anonymousToken ?? token;
+	const useAnonymousToken = !!embed.anonymousToken;
+	const batchToken = embed.anonymousToken ?? handle.token;
 
 	// Batch-resolve track IDs via /v1/tracks?ids=... (max 50 per request)
 	console.log(`  Resolving full track data for ${trackIds.length} tracks...`);
@@ -165,22 +199,33 @@ export async function fetchPlaylistViaEmbed(
 	for (let i = 0; i < trackIds.length; i += BATCH_SIZE) {
 		const batch = trackIds.slice(i, i + BATCH_SIZE);
 		try {
-			const result = await spotifyFetch<{ tracks: (SpotifyTrack | null)[] }>(
-				`/tracks?ids=${batch.join(',')}`,
-				resolveToken
-			);
+			const result = useAnonymousToken
+				? await spotifyFetch<{ tracks: (SpotifyTrack | null)[] }>(
+						`/tracks?ids=${batch.join(',')}`,
+						batchToken
+					)
+				: await tokenFetch<{ tracks: (SpotifyTrack | null)[] }>(
+						`/tracks?ids=${batch.join(',')}`,
+						handle
+					);
 			for (const track of result.tracks) {
 				if (track) tracks.push(track);
 			}
 		} catch (err) {
 			// If batch fails, try tracks individually
-			console.warn(`  Batch ${i / BATCH_SIZE + 1} failed, trying individually: ${err instanceof Error ? err.message : err}`);
+			console.warn(
+				`  Batch ${i / BATCH_SIZE + 1} failed, trying individually: ${err instanceof Error ? err.message : err}`
+			);
 			for (const id of batch) {
 				try {
-					const track = await spotifyFetch<SpotifyTrack>(`/tracks/${id}`, resolveToken);
+					const track = useAnonymousToken
+						? await spotifyFetch<SpotifyTrack>(`/tracks/${id}`, batchToken)
+						: await tokenFetch<SpotifyTrack>(`/tracks/${id}`, handle);
 					tracks.push(track);
 				} catch (innerErr) {
-					console.error(`  Could not fetch track ${id}: ${innerErr instanceof Error ? innerErr.message : innerErr}`);
+					console.error(
+						`  Could not fetch track ${id}: ${innerErr instanceof Error ? innerErr.message : innerErr}`
+					);
 				}
 			}
 		}
@@ -198,13 +243,13 @@ export async function fetchPlaylistViaEmbed(
 
 export async function fetchPlaylist(
 	playlistId: string,
-	token: string
+	handle: TokenHandle
 ): Promise<PlaylistData | null> {
-	let data = await fetchPlaylistViaApi(playlistId, token);
+	let data = await fetchPlaylistViaApi(playlistId, handle);
 
 	if (!data) {
 		console.log('  Not accessible via Web API, trying embed fallback...');
-		data = await fetchPlaylistViaEmbed(playlistId, token);
+		data = await fetchPlaylistViaEmbed(playlistId, handle);
 	}
 
 	return data;
@@ -234,9 +279,7 @@ export async function importPlaylist(
 	handle: TokenHandle,
 	existingCollectionId?: number
 ): Promise<ImportResult | null> {
-	const { token, getToken } = handle;
-
-	const data = await fetchPlaylist(playlistId, token);
+	const data = await fetchPlaylist(playlistId, handle);
 
 	if (!data || data.tracks.length === 0) {
 		console.error(`  Could not fetch playlist ${playlistId} from any source.`);
@@ -287,14 +330,9 @@ export async function importPlaylist(
 		}
 
 		try {
-			let currentToken: string;
-			try {
-				currentToken = await getToken();
-			} catch {
-				currentToken = token;
-			}
-
-			await enrichTrack(track, currentToken, collectionId, i);
+			// Proactively refresh if close to expiry (no-op when still fresh)
+			await handle.getToken();
+			await enrichTrack(track, handle.token, collectionId, i);
 			completed++;
 			console.log(
 				`  [${i + 1}/${data.tracks.length}] ✓ ${track.name} — ${track.artists.map((a) => a.name).join(', ')}`

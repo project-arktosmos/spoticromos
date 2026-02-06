@@ -1,6 +1,6 @@
 import { writable } from 'svelte/store';
 import { ThemeColors } from '$types/core.type';
-import type { Toast, ToastRich } from '$types/toast.type';
+import type { Toast } from '$types/toast.type';
 
 const DEFAULT_DURATION = 5000;
 
@@ -18,7 +18,11 @@ export function removeToast(id: string): void {
 	toastStore.update((toasts) => toasts.filter((t) => t.id !== id));
 }
 
-export function toast(message: string, color: ThemeColors = ThemeColors.Info, duration: number = DEFAULT_DURATION): void {
+export function toast(
+	message: string,
+	color: ThemeColors = ThemeColors.Info,
+	duration: number = DEFAULT_DURATION
+): void {
 	addToast({
 		id: crypto.randomUUID(),
 		type: 'simple',

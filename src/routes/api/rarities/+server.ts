@@ -1,6 +1,10 @@
 import { json, error } from '@sveltejs/kit';
 import { initializeSchema } from '$lib/server/schema';
-import { findAllRarities, createRarity, findRarityById } from '$lib/server/repositories/rarity.repository';
+import {
+	findAllRarities,
+	createRarity,
+	findRarityById
+} from '$lib/server/repositories/rarity.repository';
 import type { RequestHandler } from './$types';
 import type { CreateRarityPayload } from '$types/rarity.type';
 

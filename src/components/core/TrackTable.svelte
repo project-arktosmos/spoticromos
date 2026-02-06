@@ -61,17 +61,17 @@
 						{item.track.artists.map((a) => a.name).join(', ')}
 					</td>
 					<td class="text-base-content/70">{item.track.album?.name}</td>
-					<td class="text-base-content/50 text-right">
+					<td class="text-right text-base-content/50">
 						{formatDuration(item.track.duration_ms)}
 					</td>
 					{#if showStatus}
 						<td class="text-center">
 							{#if item.status === 'done'}
-								<span class="badge badge-success badge-sm">Done</span>
+								<span class="badge badge-sm badge-success">Done</span>
 							{:else if item.status === 'fetching'}
-								<span class="loading loading-spinner loading-xs"></span>
+								<span class="loading loading-xs loading-spinner"></span>
 							{:else if item.status === 'error'}
-								<span class="badge badge-error badge-sm">Error</span>
+								<span class="badge badge-sm badge-error">Error</span>
 							{:else}
 								<span class="badge badge-ghost badge-sm">Pending</span>
 							{/if}

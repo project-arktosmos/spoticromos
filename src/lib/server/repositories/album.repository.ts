@@ -16,10 +16,9 @@ function getLargestImageUrl(images: SpotifyImage[]): string | null {
 }
 
 export async function findAlbumById(spotifyId: string): Promise<SpotifyAlbum | null> {
-	const [rows] = await query<AlbumRow[]>(
-		'SELECT raw_json FROM albums WHERE spotify_id = ?',
-		[spotifyId]
-	);
+	const [rows] = await query<AlbumRow[]>('SELECT raw_json FROM albums WHERE spotify_id = ?', [
+		spotifyId
+	]);
 	if (rows.length === 0) return null;
 	const raw = rows[0].raw_json;
 	return (typeof raw === 'string' ? JSON.parse(raw) : raw) as SpotifyAlbum;

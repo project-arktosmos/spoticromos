@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
-	import type { CollectionRow, CollectionItemWithArtists } from '$lib/server/repositories/collection.repository';
+	import type {
+		CollectionRow,
+		CollectionItemWithArtists
+	} from '$lib/server/repositories/collection.repository';
 	import type { OwnedItemRarity } from '$lib/server/repositories/ownership.repository';
 	import type { RarityRow } from '$types/rarity.type';
 	import CollectionBadge from '$components/core/CollectionBadge.svelte';
@@ -24,8 +27,12 @@
 	let errorMsg = $state('');
 
 	let modalItemId = $state<number | null>(null);
-	let modalItem = $derived(modalItemId !== null ? items.find(i => i.id === modalItemId) ?? null : null);
-	let modalRarities = $derived(modalItemId !== null ? ownedItemRarities.get(modalItemId) ?? [] : []);
+	let modalItem = $derived(
+		modalItemId !== null ? (items.find((i) => i.id === modalItemId) ?? null) : null
+	);
+	let modalRarities = $derived(
+		modalItemId !== null ? (ownedItemRarities.get(modalItemId) ?? []) : []
+	);
 	let modalBestRarity = $derived(modalRarities[0] ?? null);
 
 	let totalSlots = $derived(items.length * allRarities.length);
@@ -37,10 +44,10 @@
 		return count;
 	});
 	let rarityProgress = $derived.by(() => {
-		return allRarities.map(rarity => {
+		return allRarities.map((rarity) => {
 			let ownedCount = 0;
 			for (const itemRarities of ownedItemRarities.values()) {
-				if (itemRarities.some(r => r.rarity_id === rarity.id)) {
+				if (itemRarities.some((r) => r.rarity_id === rarity.id)) {
 					ownedCount++;
 				}
 			}
@@ -72,7 +79,9 @@
 		if (!userId || !collectionId) return;
 
 		try {
-			const res = await fetch(`/api/profile/${encodeURIComponent(userId)}/collection/${encodeURIComponent(collectionId)}`);
+			const res = await fetch(
+				`/api/profile/${encodeURIComponent(userId)}/collection/${encodeURIComponent(collectionId)}`
+			);
 			if (res.status === 404) {
 				errorMsg = 'User or collection not found';
 				return;
@@ -103,13 +112,15 @@
 <div class="flex min-h-screen w-full flex-col gap-6 p-4 tablet:p-8">
 	{#if profileUser}
 		<div class="flex items-center gap-2">
-			<a href="/profile/{profileUser.spotify_id}" class="btn btn-ghost btn-sm">&larr; {profileUser.display_name ?? 'Profile'}</a>
+			<a href="/profile/{profileUser.spotify_id}" class="btn btn-ghost btn-sm"
+				>&larr; {profileUser.display_name ?? 'Profile'}</a
+			>
 		</div>
 	{/if}
 
 	{#if loading}
 		<div class="flex flex-1 items-center justify-center">
-			<span class="loading loading-spinner loading-lg"></span>
+			<span class="loading loading-lg loading-spinner"></span>
 		</div>
 	{:else if errorMsg}
 		<div class="alert alert-error">
@@ -117,22 +128,32 @@
 		</div>
 	{:else if collection}
 		<div class="grid grid-cols-3 gap-4">
-			<CollectionBadge {collection} classes="w-full" progress={completedSlots} progressMax={totalSlots} rarityColor={badgeRarityColor} />
+			<CollectionBadge
+				{collection}
+				classes="w-full"
+				progress={completedSlots}
+				progressMax={totalSlots}
+				rarityColor={badgeRarityColor}
+			/>
 			{#if items.length > 0 && allRarities.length > 0}
 				<div class="flex flex-col justify-center gap-2">
 					{#each rarityProgress as rp}
 						<div class="flex flex-col gap-1 rounded-lg p-2" style:--rarity-color={rp.color}>
 							<div class="flex items-center justify-between">
 								<span class="text-xs font-semibold [color:var(--rarity-color)]">{rp.name}</span>
-								<span class="text-base-content/60 text-[10px]">{rp.owned}/{rp.total}</span>
+								<span class="text-[10px] text-base-content/60">{rp.owned}/{rp.total}</span>
 							</div>
-							<progress class="progress h-1.5 w-full [color:var(--rarity-color)]" value={rp.owned} max={rp.total}></progress>
+							<progress
+								class="progress h-1.5 w-full [color:var(--rarity-color)]"
+								value={rp.owned}
+								max={rp.total}
+							></progress>
 						</div>
 					{/each}
 				</div>
 			{:else}
 				<div class="flex items-center">
-					<p class="text-base-content/50 text-sm">{items.length} tracks</p>
+					<p class="text-sm text-base-content/50">{items.length} tracks</p>
 				</div>
 			{/if}
 			<div class="flex flex-col justify-center gap-2">
@@ -145,8 +166,8 @@
 								class="h-12 w-12 rounded-full object-cover"
 							/>
 						{:else}
-							<div class="bg-base-300 flex h-12 w-12 items-center justify-center rounded-full">
-								<span class="text-base-content/30 text-lg">?</span>
+							<div class="flex h-12 w-12 items-center justify-center rounded-full bg-base-300">
+								<span class="text-lg text-base-content/30">?</span>
 							</div>
 						{/if}
 						<span class="text-sm font-semibold">{profileUser.display_name ?? 'Unknown User'}</span>
@@ -172,16 +193,27 @@
 				{/each}
 			</div>
 		{:else}
-			<p class="text-base-content/70 text-center">No tracks in this collection yet.</p>
+			<p class="text-center text-base-content/70">No tracks in this collection yet.</p>
 		{/if}
 	{/if}
 </div>
 
 {#if modalItem}
 	{@const mRarities = modalRarities}
-	<div class="modal modal-open" role="dialog" onclick={closeDetailModal} onkeydown={(e) => { if (e.key === 'Escape') closeDetailModal(); }}>
+	<div
+		class="modal-open modal"
+		role="dialog"
+		tabindex="-1"
+		onclick={closeDetailModal}
+		onkeydown={(e) => {
+			if (e.key === 'Escape') closeDetailModal();
+		}}
+	>
 		<div class="modal-box max-w-md" role="presentation" onclick={(e) => e.stopPropagation()}>
-			<button class="btn btn-circle btn-ghost btn-sm absolute top-2 right-2" onclick={closeDetailModal}>&#10005;</button>
+			<button
+				class="btn absolute top-2 right-2 btn-circle btn-ghost btn-sm"
+				onclick={closeDetailModal}>&#10005;</button
+			>
 			<div class="flex flex-col gap-4 pt-2">
 				<CollectionItem
 					item={modalItem}
@@ -191,12 +223,17 @@
 					rarityName={modalBestRarity?.rarity_name ?? null}
 				/>
 				{#if ownedItemIds.has(modalItem.id)}
-					<table class="table table-zebra table-xs w-full table-fixed border border-base-300">
+					<table class="table w-full table-fixed border border-base-300 table-zebra table-xs">
 						<thead>
 							<tr>
 								{#each allRarities as rarity}
-									<th class="border border-base-300 p-1 text-center" style:--rarity-color={rarity.color}>
-										<span class="text-[10px] font-semibold [color:var(--rarity-color)]">{rarity.name}</span>
+									<th
+										class="border border-base-300 p-1 text-center"
+										style:--rarity-color={rarity.color}
+									>
+										<span class="text-[10px] font-semibold [color:var(--rarity-color)]"
+											>{rarity.name}</span
+										>
 									</th>
 								{/each}
 							</tr>
@@ -204,9 +241,12 @@
 						<tbody>
 							<tr>
 								{#each allRarities as rarity}
-									{@const itemRarity = mRarities.find(r => r.rarity_id === rarity.id)}
+									{@const itemRarity = mRarities.find((r) => r.rarity_id === rarity.id)}
 									{@const copyCount = itemRarity?.copy_count ?? 0}
-									<td class="border border-base-300 p-1 text-center" style:--rarity-color={rarity.color}>
+									<td
+										class="border border-base-300 p-1 text-center"
+										style:--rarity-color={rarity.color}
+									>
 										<span class="text-xs font-bold [color:var(--rarity-color)]">{copyCount}x</span>
 									</td>
 								{/each}

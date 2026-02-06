@@ -24,7 +24,7 @@
 
 	// Inline editing
 	let creatingNew = $state(false);
-	let saving = $state(false);
+	let _saving = $state(false);
 
 	// Generation
 	let generatingAll = $state(false);
@@ -82,14 +82,12 @@
 	}
 
 	async function handleSave(payload: CreateTriviaQuestionPayload, questionId?: number) {
-		saving = true;
+		_saving = true;
 		errorMsg = '';
 
 		try {
 			const isEdit = questionId !== undefined;
-			const url = isEdit
-				? `/api/trivia-questions/${questionId}`
-				: '/api/trivia-questions';
+			const url = isEdit ? `/api/trivia-questions/${questionId}` : '/api/trivia-questions';
 			const method = isEdit ? 'PUT' : 'POST';
 
 			const res = await fetch(url, {
@@ -109,7 +107,7 @@
 		} catch (err) {
 			errorMsg = err instanceof Error ? err.message : 'Failed to save question';
 		} finally {
-			saving = false;
+			_saving = false;
 		}
 	}
 
@@ -226,13 +224,18 @@
 <div class="flex min-h-screen w-full flex-col gap-6 p-4 tablet:p-8">
 	<div class="flex items-center justify-between">
 		<h1 class="text-2xl font-bold">Trivia Questions</h1>
-		<button class="btn btn-primary btn-sm" onclick={openCreate}>+ New Question</button>
+		<button class="btn btn-sm btn-primary" onclick={openCreate}>+ New Question</button>
 	</div>
 
 	{#if errorMsg}
 		<div class="alert alert-error">
 			<span>{errorMsg}</span>
-			<button class="btn btn-ghost btn-xs" onclick={() => { errorMsg = ''; }}>Dismiss</button>
+			<button
+				class="btn btn-ghost btn-xs"
+				onclick={() => {
+					errorMsg = '';
+				}}>Dismiss</button
+			>
 		</div>
 	{/if}
 
@@ -241,13 +244,15 @@
 		<div class="flex items-center gap-3 rounded-lg bg-base-200 px-4 py-3">
 			<span class="text-sm font-medium whitespace-nowrap">Collection:</span>
 			{#if loadingCollections}
-				<span class="loading loading-spinner loading-sm"></span>
+				<span class="loading loading-sm loading-spinner"></span>
 			{:else if collections.length === 0}
-				<span class="text-base-content/50 text-sm">No collections available</span>
+				<span class="text-sm text-base-content/50">No collections available</span>
 			{:else}
 				<select
-					class="select select-bordered select-sm flex-1"
-					onchange={(e) => { onCollectionChange(Number((e.target as HTMLSelectElement).value) || null); }}
+					class="select-bordered select flex-1 select-sm"
+					onchange={(e) => {
+						onCollectionChange(Number((e.target as HTMLSelectElement).value) || null);
+					}}
 				>
 					<option value="">Choose collection...</option>
 					{#each collections as col}
@@ -262,29 +267,23 @@
 	{#if creatingNew}
 		<div class="rounded-xl border border-primary bg-base-100 p-5 shadow-sm">
 			<h2 class="mb-4 text-lg font-semibold">New Question</h2>
-			<TriviaQuestionForm
-				onsave={(payload) => handleSave(payload)}
-				oncancel={cancelCreate}
-			/>
+			<TriviaQuestionForm onsave={(payload) => handleSave(payload)} oncancel={cancelCreate} />
 		</div>
 	{/if}
 
 	{#if loading}
 		<div class="flex flex-1 items-center justify-center">
-			<span class="loading loading-spinner loading-lg"></span>
+			<span class="loading loading-lg loading-spinner"></span>
 		</div>
 	{:else if questions.length === 0}
 		<div class="flex flex-col items-center gap-4 py-12">
-			<p class="text-base-content/60 text-center">
-				No trivia questions yet. Create one to get started, or seed the defaults with all 13 question types.
+			<p class="text-center text-base-content/60">
+				No trivia questions yet. Create one to get started, or seed the defaults with all 13
+				question types.
 			</p>
-			<button
-				class="btn btn-secondary btn-sm"
-				disabled={seeding}
-				onclick={seedDefault}
-			>
+			<button class="btn btn-sm btn-secondary" disabled={seeding} onclick={seedDefault}>
 				{#if seeding}
-					<span class="loading loading-spinner loading-sm"></span>
+					<span class="loading loading-sm loading-spinner"></span>
 				{/if}
 				Seed default questions
 			</button>
@@ -295,25 +294,26 @@
 				{@const generatedQuestions = generatedResults.get(question.id) ?? []}
 				<div class="rounded-xl border border-base-300 bg-base-100 p-4 shadow-sm">
 					{#key question.id}
-						<TriviaQuestionForm
-							{question}
-							onsave={(payload) => handleSave(payload, question.id)}
-						/>
+						<TriviaQuestionForm {question} onsave={(payload) => handleSave(payload, question.id)} />
 					{/key}
 
 					<div class="mt-3 flex items-center gap-2 border-t border-base-300 pt-3">
 						<button
-							class="btn btn-primary btn-xs"
-							disabled={!selectedCollectionId || generatingAll || generatingQuestionId === question.id}
+							class="btn btn-xs btn-primary"
+							disabled={!selectedCollectionId ||
+								generatingAll ||
+								generatingQuestionId === question.id}
 							onclick={() => handleGenerate(question.id)}
 						>
 							{#if generatingAll || generatingQuestionId === question.id}
-								<span class="loading loading-spinner loading-xs"></span>
+								<span class="loading loading-xs loading-spinner"></span>
 							{/if}
 							Generate
 						</button>
 						<div class="flex-1"></div>
-						<button class="btn btn-ghost btn-xs text-error" onclick={() => handleDelete(question)}>Delete</button>
+						<button class="btn text-error btn-ghost btn-xs" onclick={() => handleDelete(question)}
+							>Delete</button
+						>
 					</div>
 
 					{#if generatedQuestions.length > 0}
@@ -330,13 +330,12 @@
 										{/if}
 										<div class="flex flex-1 flex-col gap-1">
 											{#each gq.options as option, i}
-												<div class={classNames(
-													'flex items-center gap-2 rounded px-2 py-1 text-sm',
-													{
+												<div
+													class={classNames('flex items-center gap-2 rounded px-2 py-1 text-sm', {
 														'bg-success/20 font-semibold': i === gq.correctIndex,
 														'bg-base-100': i !== gq.correctIndex
-													}
-												)}>
+													})}
+												>
 													{#if option.imageUrl}
 														<img
 															src={option.imageUrl}
@@ -346,7 +345,7 @@
 													{/if}
 													<span class="flex-1">{option.label}</span>
 													{#if option.verification}
-														<span class="text-base-content/50 text-xs">{option.verification}</span>
+														<span class="text-xs text-base-content/50">{option.verification}</span>
 													{/if}
 												</div>
 											{/each}

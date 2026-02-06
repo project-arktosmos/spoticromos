@@ -46,10 +46,9 @@ export async function findAllQuestions(): Promise<TriviaQuestionRow[]> {
 }
 
 export async function findQuestionById(id: number): Promise<TriviaQuestionRow | null> {
-	const [rows] = await query<TriviaQuestionDbRow[]>(
-		'SELECT * FROM trivia_questions WHERE id = ?',
-		[id]
-	);
+	const [rows] = await query<TriviaQuestionDbRow[]>('SELECT * FROM trivia_questions WHERE id = ?', [
+		id
+	]);
 	return rows.length ? parseQuestionRow(rows[0]) : null;
 }
 
@@ -105,11 +104,7 @@ export async function bulkCreateQuestions(
 	if (questions.length === 0) return;
 
 	const placeholders = questions.map(() => '(?, ?, ?)').join(', ');
-	const values = questions.flatMap((q) => [
-		q.question_type,
-		JSON.stringify(q.config),
-		q.position
-	]);
+	const values = questions.flatMap((q) => [q.question_type, JSON.stringify(q.config), q.position]);
 
 	await execute(
 		`INSERT INTO trivia_questions (question_type, config, position) VALUES ${placeholders}`,

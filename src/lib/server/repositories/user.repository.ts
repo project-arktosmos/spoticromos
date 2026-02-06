@@ -60,9 +60,7 @@ export async function ensureUserExists(data: {
 }
 
 export async function findUserBySpotifyId(spotifyId: string): Promise<UserRow | null> {
-	const [rows] = await query<UserDbRow[]>('SELECT * FROM users WHERE spotify_id = ?', [
-		spotifyId
-	]);
+	const [rows] = await query<UserDbRow[]>('SELECT * FROM users WHERE spotify_id = ?', [spotifyId]);
 	return rows.length ? rows[0] : null;
 }
 

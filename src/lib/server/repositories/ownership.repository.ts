@@ -27,10 +27,10 @@ export async function removeUserCollection(
 	userSpotifyId: string,
 	collectionId: number
 ): Promise<void> {
-	await execute(
-		'DELETE FROM user_collections WHERE user_spotify_id = ? AND collection_id = ?',
-		[userSpotifyId, collectionId]
-	);
+	await execute('DELETE FROM user_collections WHERE user_spotify_id = ? AND collection_id = ?', [
+		userSpotifyId,
+		collectionId
+	]);
 }
 
 // ---------------------------------------------------------------------------
@@ -47,11 +47,13 @@ export interface CollectionProgress {
 export async function findUserCollectionProgress(
 	userSpotifyId: string
 ): Promise<CollectionProgress[]> {
-	const [rows] = await query<(RowDataPacket & {
-		collection_id: number;
-		completed_slots: number;
-		total_slots: number;
-	})[]>(
+	const [rows] = await query<
+		(RowDataPacket & {
+			collection_id: number;
+			completed_slots: number;
+			total_slots: number;
+		})[]
+	>(
 		`SELECT
 		   c.id AS collection_id,
 		   (SELECT COUNT(*) FROM collection_items ci WHERE ci.collection_id = c.id)
@@ -67,13 +69,15 @@ export async function findUserCollectionProgress(
 	);
 
 	// Find highest fully-completed rarity color per collection
-	const [rarityRows] = await query<(RowDataPacket & {
-		collection_id: number;
-		rarity_color: string;
-		rarity_level: number;
-		owned_count: number;
-		item_count: number;
-	})[]>(
+	const [rarityRows] = await query<
+		(RowDataPacket & {
+			collection_id: number;
+			rarity_color: string;
+			rarity_level: number;
+			owned_count: number;
+			item_count: number;
+		})[]
+	>(
 		`SELECT
 		   ci.collection_id,
 		   r.color AS rarity_color,
@@ -97,7 +101,7 @@ export async function findUserCollectionProgress(
 		}
 	}
 
-	return rows.map(row => ({
+	return rows.map((row) => ({
 		collection_id: row.collection_id,
 		completed_slots: row.completed_slots,
 		total_slots: row.total_slots,
@@ -250,7 +254,13 @@ export async function stickItem(
 		}
 
 		const [candidates] = await conn.query<
-			(RowDataPacket & { id: number; rarity_id: number; rarity_name: string; rarity_color: string; rarity_level: number })[]
+			(RowDataPacket & {
+				id: number;
+				rarity_id: number;
+				rarity_name: string;
+				rarity_color: string;
+				rarity_level: number;
+			})[]
 		>(targetQuery, targetParams);
 
 		if (candidates.length === 0) {
@@ -260,10 +270,9 @@ export async function stickItem(
 
 		const target = candidates[0];
 
-		await conn.execute(
-			'UPDATE user_collection_items SET is_stuck = TRUE WHERE id = ?',
-			[target.id]
-		);
+		await conn.execute('UPDATE user_collection_items SET is_stuck = TRUE WHERE id = ?', [
+			target.id
+		]);
 
 		await conn.commit();
 		return {
@@ -280,10 +289,7 @@ export async function stickItem(
 	}
 }
 
-export async function unstickItem(
-	userSpotifyId: string,
-	collectionItemId: number
-): Promise<void> {
+export async function unstickItem(userSpotifyId: string, collectionItemId: number): Promise<void> {
 	await execute(
 		`UPDATE user_collection_items
 		 SET is_stuck = FALSE
@@ -326,10 +332,7 @@ export async function mergeItems(
 		// Find the next rarity tier
 		const [nextRows] = await conn.query<
 			(RowDataPacket & { id: number; name: string; color: string; level: number })[]
-		>(
-			'SELECT id, name, color, level FROM rarities WHERE level = ?',
-			[currentLevel + 1]
-		);
+		>('SELECT id, name, color, level FROM rarities WHERE level = ?', [currentLevel + 1]);
 		if (nextRows.length === 0) {
 			await conn.rollback();
 			throw new Error('Already at maximum rarity tier');
@@ -401,10 +404,7 @@ export async function recycleItems(
 		// Find the rarity and its level
 		const [rarityRows] = await conn.query<
 			(RowDataPacket & { id: number; name: string; level: number })[]
-		>(
-			'SELECT id, name, level FROM rarities WHERE id = ?',
-			[rarityId]
-		);
+		>('SELECT id, name, level FROM rarities WHERE id = ?', [rarityId]);
 		if (rarityRows.length === 0) {
 			await conn.rollback();
 			throw new Error('Rarity not found');

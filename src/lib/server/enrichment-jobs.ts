@@ -61,7 +61,12 @@ export function startJob(
 	return job;
 }
 
-async function processJob(job: EnrichmentJob, tracks: TrackEntry[], initialToken: string, userSpotifyId?: string) {
+async function processJob(
+	job: EnrichmentJob,
+	tracks: TrackEntry[],
+	initialToken: string,
+	userSpotifyId?: string
+) {
 	await initializeSchema();
 
 	for (let i = 0; i < tracks.length; i++) {

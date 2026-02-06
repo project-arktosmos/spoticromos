@@ -1,4 +1,9 @@
-import type { SpotifyTrack, SpotifyAlbum, SpotifyFullArtist, EnrichTrackResult } from '$types/spotify.type';
+import type {
+	SpotifyTrack,
+	SpotifyAlbum,
+	SpotifyFullArtist,
+	EnrichTrackResult
+} from '$types/spotify.type';
 import type { Lyrics } from '$types/lyrics.type';
 import { fetchSpotifyTrack, fetchSpotifyAlbum, fetchSpotifyArtist } from '$lib/server/spotify-api';
 import { fetchLrcLibLyrics } from '$lib/server/lrclib-api';
@@ -142,7 +147,7 @@ export async function enrichTrack(
 			albumSpotifyId: album?.id ?? basicTrack.album?.id ?? null,
 			albumReleaseYear: album?.release_date?.split('-')[0] ?? null,
 			albumLabel: album?.label ?? null,
-			lyrics: lyrics?.instrumental ? null : lyrics?.plainLyrics ?? null,
+			lyrics: lyrics?.instrumental ? null : (lyrics?.plainLyrics ?? null),
 			position,
 			artistIds
 		});

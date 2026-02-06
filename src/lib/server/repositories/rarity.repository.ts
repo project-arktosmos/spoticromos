@@ -23,9 +23,7 @@ export async function findRarityById(id: number): Promise<RarityRow | null> {
 }
 
 export async function findLowestRarity(): Promise<RarityRow | null> {
-	const [rows] = await query<RarityDbRow[]>(
-		'SELECT * FROM rarities ORDER BY level ASC LIMIT 1'
-	);
+	const [rows] = await query<RarityDbRow[]>('SELECT * FROM rarities ORDER BY level ASC LIMIT 1');
 	return rows.length ? rows[0] : null;
 }
 
@@ -34,10 +32,11 @@ export async function createRarity(data: {
 	color: string;
 	level: number;
 }): Promise<number> {
-	const [result] = await execute(
-		'INSERT INTO rarities (name, color, level) VALUES (?, ?, ?)',
-		[data.name, data.color, data.level]
-	);
+	const [result] = await execute('INSERT INTO rarities (name, color, level) VALUES (?, ?, ?)', [
+		data.name,
+		data.color,
+		data.level
+	]);
 	return result.insertId;
 }
 

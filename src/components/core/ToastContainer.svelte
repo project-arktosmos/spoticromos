@@ -19,7 +19,7 @@
 </script>
 
 {#if toasts.length > 0}
-	<div class="toast toast-top toast-end z-50">
+	<div class="toast toast-end toast-top z-50">
 		{#each toasts as item (item.id)}
 			<div class={classNames('alert shadow-lg', colorToAlert[item.color])}>
 				{#if item.type === 'simple'}
@@ -27,11 +27,7 @@
 				{:else}
 					<div class="flex items-start gap-3">
 						{#if item.image}
-							<img
-								src={item.image}
-								alt={item.title}
-								class="h-12 w-12 rounded-lg object-cover"
-							/>
+							<img src={item.image} alt={item.title} class="h-12 w-12 rounded-lg object-cover" />
 						{/if}
 						<div class="flex flex-col">
 							<span class="font-bold">{item.title}</span>

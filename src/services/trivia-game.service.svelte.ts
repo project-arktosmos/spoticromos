@@ -30,7 +30,9 @@ export class TriviaGameService {
 	private readonly FETCH_THRESHOLD = 3;
 
 	currentQuestion = $derived(
-		this.gameStarted && this.currentIndex < this.questions.length ? this.questions[this.currentIndex] : null
+		this.gameStarted && this.currentIndex < this.questions.length
+			? this.questions[this.currentIndex]
+			: null
 	);
 
 	currentMultiplier = $derived(

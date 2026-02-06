@@ -1,6 +1,10 @@
 import { json, error } from '@sveltejs/kit';
 import { initializeSchema } from '$lib/server/schema';
-import { findRarityById, updateRarity, deleteRarity } from '$lib/server/repositories/rarity.repository';
+import {
+	findRarityById,
+	updateRarity,
+	deleteRarity
+} from '$lib/server/repositories/rarity.repository';
 import type { RequestHandler } from './$types';
 import type { UpdateRarityPayload } from '$types/rarity.type';
 
@@ -33,8 +37,7 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 
 	const { name, color, level } = body as Partial<UpdateRarityPayload>;
 
-	if (color !== undefined && !/^#[0-9A-Fa-f]{6}$/.test(color))
-		return error(400, 'Invalid color');
+	if (color !== undefined && !/^#[0-9A-Fa-f]{6}$/.test(color)) return error(400, 'Invalid color');
 	if (level !== undefined && (typeof level !== 'number' || level < 1))
 		return error(400, 'Invalid level');
 

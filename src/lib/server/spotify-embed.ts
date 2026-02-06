@@ -47,7 +47,13 @@ export async function fetchPlaylistFromEmbed(playlistId: string): Promise<EmbedP
 	if (!entity || entity.type !== 'playlist') return null;
 
 	const trackList: EmbedTrack[] = (entity.trackList ?? []).map(
-		(t: { uri: string; title: string; subtitle: string; duration: number; isExplicit: boolean }) => {
+		(t: {
+			uri: string;
+			title: string;
+			subtitle: string;
+			duration: number;
+			isExplicit: boolean;
+		}) => {
 			const id = t.uri.replace('spotify:track:', '');
 			return {
 				uri: t.uri,

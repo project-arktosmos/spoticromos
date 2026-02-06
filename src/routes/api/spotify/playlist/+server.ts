@@ -20,10 +20,7 @@ export const GET: RequestHandler = async ({ url, request }) => {
 		const userToken = request.headers.get('X-Spotify-Token');
 		const token = userToken || (await getClientToken());
 
-		const playlist = await spotifyFetch<SpotifyPlaylist>(
-			`/playlists/${playlistId}`,
-			token
-		);
+		const playlist = await spotifyFetch<SpotifyPlaylist>(`/playlists/${playlistId}`, token);
 
 		const allItems: Array<{ added_at: string; track: SpotifyTrack }> = [];
 		let offset = 0;

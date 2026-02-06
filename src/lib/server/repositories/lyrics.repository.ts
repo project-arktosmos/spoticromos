@@ -16,7 +16,11 @@ interface LyricsRow extends RowDataPacket {
 	spotify_track_id: string | null;
 }
 
-function generateLyricsId(trackName: string, artistName: string, duration: number | undefined): string {
+function generateLyricsId(
+	trackName: string,
+	artistName: string,
+	duration: number | undefined
+): string {
 	const key = `${trackName}|${artistName}|${duration ?? 0}`;
 	return createHash('sha256').update(key).digest('hex');
 }
@@ -25,9 +29,9 @@ function rowToLyrics(row: LyricsRow): Lyrics {
 	let syncedLyrics: SyncedLyricLine[] | null = null;
 	if (row.synced_lyrics) {
 		try {
-			syncedLyrics = (typeof row.synced_lyrics === 'string'
-				? JSON.parse(row.synced_lyrics)
-				: row.synced_lyrics) as SyncedLyricLine[];
+			syncedLyrics = (
+				typeof row.synced_lyrics === 'string' ? JSON.parse(row.synced_lyrics) : row.synced_lyrics
+			) as SyncedLyricLine[];
 		} catch {
 			syncedLyrics = null;
 		}
@@ -60,10 +64,7 @@ export async function findLyricsByKey(
 	duration: number | undefined
 ): Promise<Lyrics | null> {
 	const id = generateLyricsId(trackName, artistName, duration);
-	const [rows] = await query<LyricsRow[]>(
-		'SELECT * FROM lyrics WHERE id = ? LIMIT 1',
-		[id]
-	);
+	const [rows] = await query<LyricsRow[]>('SELECT * FROM lyrics WHERE id = ? LIMIT 1', [id]);
 	if (rows.length === 0) return null;
 	return rowToLyrics(rows[0]);
 }

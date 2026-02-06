@@ -184,9 +184,7 @@ export async function claimFreeRewards(
 		}
 
 		// Compute remaining free-claim info after the update
-		const [updated] = await conn.query<
-			(RowDataPacket & { elapsed_seconds: number | null })[]
-		>(
+		const [updated] = await conn.query<(RowDataPacket & { elapsed_seconds: number | null })[]>(
 			`SELECT TIMESTAMPDIFF(SECOND, last_free_claim, UTC_TIMESTAMP()) AS elapsed_seconds
 			 FROM user_collections
 			 WHERE user_spotify_id = ? AND collection_id = ?`,

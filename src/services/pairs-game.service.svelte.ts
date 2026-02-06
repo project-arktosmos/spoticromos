@@ -48,11 +48,19 @@ export class PairsGameService {
 		for (const item of this.items) {
 			if (item.album_cover_url && !seen.has(item.album_cover_url)) {
 				seen.add(item.album_cover_url);
-				result.push({ imageUrl: item.album_cover_url, label: item.album_name ?? item.track_name, kind: 'album' });
+				result.push({
+					imageUrl: item.album_cover_url,
+					label: item.album_name ?? item.track_name,
+					kind: 'album'
+				});
 			}
 			if (item.artist_image_url && !seen.has(item.artist_image_url)) {
 				seen.add(item.artist_image_url);
-				result.push({ imageUrl: item.artist_image_url, label: item.artists ?? 'Unknown', kind: 'artist' });
+				result.push({
+					imageUrl: item.artist_image_url,
+					label: item.artists ?? 'Unknown',
+					kind: 'artist'
+				});
 			}
 		}
 
@@ -97,8 +105,22 @@ export class PairsGameService {
 		let cardId = 0;
 		for (const img of selected) {
 			const pairKey = img.imageUrl;
-			gameCards.push({ id: cardId++, imageUrl: img.imageUrl, label: img.label, kind: img.kind, pairKey, state: 'faceDown' });
-			gameCards.push({ id: cardId++, imageUrl: img.imageUrl, label: img.label, kind: img.kind, pairKey, state: 'faceDown' });
+			gameCards.push({
+				id: cardId++,
+				imageUrl: img.imageUrl,
+				label: img.label,
+				kind: img.kind,
+				pairKey,
+				state: 'faceDown'
+			});
+			gameCards.push({
+				id: cardId++,
+				imageUrl: img.imageUrl,
+				label: img.label,
+				kind: img.kind,
+				pairKey,
+				state: 'faceDown'
+			});
 		}
 
 		this.cards = this.shuffle(gameCards);
@@ -178,7 +200,9 @@ export class PairsGameService {
 			if (res.ok) {
 				this.rewardResult = await res.json();
 			}
-		} catch { /* silent */ }
+		} catch {
+			/* silent */
+		}
 	}
 
 	async init() {

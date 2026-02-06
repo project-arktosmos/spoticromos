@@ -7,7 +7,8 @@ export const POST: RequestHandler = async ({ params, locals, request }) => {
 	if (!locals.user) return error(401, 'Authentication required');
 
 	const collectionId = Number(params.id);
-	if (!Number.isFinite(collectionId) || collectionId <= 0) return error(400, 'Invalid collection ID');
+	if (!Number.isFinite(collectionId) || collectionId <= 0)
+		return error(400, 'Invalid collection ID');
 
 	const itemId = Number(params.itemId);
 	if (!Number.isFinite(itemId) || itemId <= 0) return error(400, 'Invalid item ID');

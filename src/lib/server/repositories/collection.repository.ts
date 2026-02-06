@@ -46,17 +46,6 @@ export interface CollectionArtistRow {
 	created_at: string;
 }
 
-interface CollectionArtistDbRow extends RowDataPacket {
-	id: string;
-	name: string;
-	spotify_uri: string | null;
-	spotify_url: string | null;
-	popularity: number | null;
-	followers: number | null;
-	genres: string | null;
-	created_at: string;
-}
-
 export interface CollectionArtistImageRow {
 	id: number;
 	artist_id: string;
@@ -98,7 +87,9 @@ export async function saveCollection(data: {
 	return rows[0].id;
 }
 
-export async function findCollectionsByIds(ids: number[]): Promise<(CollectionRow & { track_count: number })[]> {
+export async function findCollectionsByIds(
+	ids: number[]
+): Promise<(CollectionRow & { track_count: number })[]> {
 	if (ids.length === 0) return [];
 	const placeholders = ids.map(() => '?').join(', ');
 	const [rows] = await query<(CollectionDbRow & { track_count: number })[]>(

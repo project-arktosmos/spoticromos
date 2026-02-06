@@ -24,10 +24,11 @@
 	let jobTotal = $state(0);
 	let currentTrackName = $state<string | null>(null);
 	let currentPosition = $state(-1);
-	let latestItem = $state<CollectionItemWithArtists | null>(null);
+	let _latestItem = $state<CollectionItemWithArtists | null>(null);
 	let pollTimer: ReturnType<typeof setInterval> | null = null;
 
 	$effect(() => {
+		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 		$page;
 	});
 
@@ -202,7 +203,7 @@
 
 				if (newItems.length > 0) {
 					collectionItems = [...collectionItems, ...newItems];
-					latestItem = newItems[newItems.length - 1];
+					_latestItem = newItems[newItems.length - 1];
 
 					// Mark corresponding tracks as done
 					const newIds = new Set(newItems.map((ci) => ci.track_spotify_id));
@@ -251,7 +252,7 @@
 
 	{#if loading}
 		<div class="flex flex-1 items-center justify-center">
-			<span class="loading loading-spinner loading-lg"></span>
+			<span class="loading loading-lg loading-spinner"></span>
 		</div>
 	{:else}
 		{#if tracks.length > 0}
@@ -268,7 +269,7 @@
 		{/if}
 
 		{#if enrichedCount === tracks.length && tracks.length > 0 && collectionId}
-			<a href="/collections/{collectionId}" class="btn btn-primary btn-xl w-full">
+			<a href="/collections/{collectionId}" class="btn w-full btn-xl btn-primary">
 				View Collection
 			</a>
 		{:else if collectionItems.length > 0}
@@ -282,7 +283,7 @@
 		{#if tracks.length > 0}
 			<TrackTable items={trackTableItems} highlightIndex={currentPosition} />
 		{:else}
-			<p class="text-base-content/70 text-center">No tracks found.</p>
+			<p class="text-center text-base-content/70">No tracks found.</p>
 		{/if}
 	{/if}
 </div>

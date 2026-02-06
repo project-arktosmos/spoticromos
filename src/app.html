@@ -6,7 +6,9 @@
 		<!-- Google Consent Mode v2: deny analytics by default until user consents -->
 		<script>
 			window.dataLayer = window.dataLayer || [];
-			function gtag(){dataLayer.push(arguments);}
+			function gtag() {
+				dataLayer.push(arguments);
+			}
 			gtag('consent', 'default', {
 				analytics_storage: 'denied',
 				ad_storage: 'denied',

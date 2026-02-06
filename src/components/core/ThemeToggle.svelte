@@ -31,7 +31,7 @@
 </script>
 
 <button
-	class={classNames('btn btn-circle btn-ghost btn-sm fixed bottom-4 left-4 z-50')}
+	class={classNames('btn fixed bottom-4 left-4 z-50 btn-circle btn-ghost btn-sm')}
 	onclick={handleToggle}
 	aria-label="Toggle theme"
 >

@@ -78,14 +78,14 @@
 
 <div class="flex min-h-screen">
 	<!-- Sidebar -->
-	<aside class="bg-base-200 flex w-60 shrink-0 flex-col border-r border-base-300">
+	<aside class="flex w-60 shrink-0 flex-col border-r border-base-300 bg-base-200">
 		<div class="border-b border-base-300 p-4">
 			<h2 class="text-lg font-bold">Tables</h2>
 		</div>
 
 		{#if loadingTables}
 			<div class="flex flex-1 items-center justify-center">
-				<span class="loading loading-spinner loading-md"></span>
+				<span class="loading loading-md loading-spinner"></span>
 			</div>
 		{:else}
 			<ul class="menu w-full p-2">
@@ -112,27 +112,27 @@
 		</div>
 
 		{#if error}
-			<div class="alert alert-error mb-4">
+			<div class="mb-4 alert alert-error">
 				<span>{error}</span>
 			</div>
 		{/if}
 
 		{#if !selectedTable}
 			<div class="flex flex-1 items-center justify-center">
-				<p class="text-base-content/50 text-lg">Select a table to view its data</p>
+				<p class="text-lg text-base-content/50">Select a table to view its data</p>
 			</div>
 		{:else if loadingData}
 			<div class="flex flex-1 items-center justify-center">
-				<span class="loading loading-spinner loading-lg"></span>
+				<span class="loading loading-lg loading-spinner"></span>
 			</div>
 		{:else}
 			<div class="mb-3 flex items-center justify-between">
 				<h2 class="text-lg font-semibold">{selectedTable}</h2>
-				<span class="text-base-content/60 text-sm">{total} rows</span>
+				<span class="text-sm text-base-content/60">{total} rows</span>
 			</div>
 
 			<div class="flex-1 overflow-auto">
-				<table class="table table-sm table-pin-rows">
+				<table class="table-pin-rows table table-sm">
 					<thead>
 						<tr>
 							{#each columns as col (col)}
@@ -156,7 +156,7 @@
 						{/each}
 						{#if rows.length === 0}
 							<tr>
-								<td colspan={columns.length} class="text-base-content/50 text-center">
+								<td colspan={columns.length} class="text-center text-base-content/50">
 									No data in this table
 								</td>
 							</tr>
@@ -168,11 +168,7 @@
 			<!-- Pagination -->
 			{#if totalPages > 1}
 				<div class="mt-4 flex items-center justify-center gap-2">
-					<button
-						class="btn btn-sm"
-						disabled={page <= 1}
-						onclick={() => goToPage(page - 1)}
-					>
+					<button class="btn btn-sm" disabled={page <= 1} onclick={() => goToPage(page - 1)}>
 						«
 					</button>
 

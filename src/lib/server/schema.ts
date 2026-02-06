@@ -420,9 +420,7 @@ async function migrateRarities(): Promise<void> {
 		]);
 
 		if (!(await indexExists('user_collection_items', 'idx_uci_rarity'))) {
-			await execute(
-				'ALTER TABLE user_collection_items ADD INDEX idx_uci_rarity (rarity_id)'
-			);
+			await execute('ALTER TABLE user_collection_items ADD INDEX idx_uci_rarity (rarity_id)');
 		}
 	}
 

@@ -10,25 +10,19 @@
 		classes?: string;
 	}
 
-	let { imageUrl, label, kind, matched = false, gameLost = false, classes = '' }: Props = $props();
+	let { imageUrl, label, kind, matched = false, classes = '' }: Props = $props();
 
-	let imageClasses = $derived(classNames(
-		'aspect-square w-full object-cover',
-		matched && 'opacity-80'
-	));
+	let imageClasses = $derived(
+		classNames('aspect-square w-full object-cover', matched && 'opacity-80')
+	);
 
-	let kindBadgeClasses = $derived(classNames(
-		'badge badge-xs',
-		kind === 'album' ? 'badge-primary' : 'badge-secondary'
-	));
+	let kindBadgeClasses = $derived(
+		classNames('badge badge-xs', kind === 'album' ? 'badge-primary' : 'badge-secondary')
+	);
 </script>
 
 <div class={classNames('flex w-full flex-col overflow-hidden rounded-lg', classes)}>
-	<img
-		src={imageUrl}
-		alt={label}
-		class={imageClasses}
-	/>
+	<img src={imageUrl} alt={label} class={imageClasses} />
 	<div class="bg-base-200 px-2 py-1">
 		<p class="truncate text-xs font-medium">{label}</p>
 	</div>

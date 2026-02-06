@@ -53,8 +53,6 @@
 		offset = 0;
 		await fetchPlaylists();
 	}
-
-
 </script>
 
 <div class="flex min-h-screen w-full flex-col gap-6 p-4 tablet:p-8">
@@ -62,14 +60,14 @@
 		<h1 class="text-2xl font-bold">Import</h1>
 		<button class="btn btn-outline btn-sm" onclick={refetchPlaylists} disabled={loading}>
 			{#if loading}
-				<span class="loading loading-spinner loading-xs"></span>
+				<span class="loading loading-xs loading-spinner"></span>
 			{/if}
 			Refresh
 		</button>
 	</div>
 
 	{#if playlists.length > 0}
-		<p class="text-base-content/70 text-sm">{total} playlists</p>
+		<p class="text-sm text-base-content/70">{total} playlists</p>
 
 		<div class="grid grid-cols-2 gap-4 tablet:grid-cols-3 large:grid-cols-4">
 			{#each playlists as playlist (playlist.id)}
@@ -78,9 +76,7 @@
 					href={imported ? undefined : `/import/${playlist.id}`}
 					class={classNames(
 						'card bg-base-200 shadow-sm',
-						imported
-							? 'cursor-default opacity-50'
-							: 'transition-shadow hover:shadow-md'
+						imported ? 'cursor-default opacity-50' : 'transition-shadow hover:shadow-md'
 					)}
 					aria-disabled={imported}
 					onclick={imported ? (e) => e.preventDefault() : undefined}
@@ -95,8 +91,8 @@
 						</figure>
 					{:else}
 						<figure>
-							<div class="bg-base-300 flex aspect-square w-full items-center justify-center">
-								<span class="text-base-content/30 text-4xl">♫</span>
+							<div class="flex aspect-square w-full items-center justify-center bg-base-300">
+								<span class="text-4xl text-base-content/30">♫</span>
 							</div>
 						</figure>
 					{/if}
@@ -104,14 +100,14 @@
 						<div class="flex items-center justify-between">
 							<h2 class="card-title text-base">{playlist.name}</h2>
 							{#if imported}
-								<span class="badge badge-success badge-sm">Imported</span>
+								<span class="badge badge-sm badge-success">Imported</span>
 							{/if}
 						</div>
-						<p class="text-base-content/60 text-sm">
+						<p class="text-sm text-base-content/60">
 							{playlist.tracks.total} tracks
 						</p>
 						{#if playlist.description}
-							<p class="text-base-content/50 line-clamp-2 text-xs">
+							<p class="line-clamp-2 text-xs text-base-content/50">
 								{playlist.description}
 							</p>
 						{/if}
@@ -122,13 +118,9 @@
 
 		{#if playlists.length < total}
 			<div class="flex justify-center py-4">
-				<button
-					class="btn btn-primary btn-sm"
-					onclick={fetchPlaylists}
-					disabled={loading}
-				>
+				<button class="btn btn-sm btn-primary" onclick={fetchPlaylists} disabled={loading}>
 					{#if loading}
-						<span class="loading loading-spinner loading-sm"></span>
+						<span class="loading loading-sm loading-spinner"></span>
 					{/if}
 					Load More
 				</button>
@@ -136,9 +128,9 @@
 		{/if}
 	{:else if loading}
 		<div class="flex flex-1 items-center justify-center">
-			<span class="loading loading-spinner loading-lg"></span>
+			<span class="loading loading-lg loading-spinner"></span>
 		</div>
 	{:else}
-		<p class="text-base-content/70 text-center">No playlists found.</p>
+		<p class="text-center text-base-content/70">No playlists found.</p>
 	{/if}
 </div>

@@ -1,7 +1,9 @@
 @import 'tailwindcss';
 @import '@fortawesome/fontawesome-free/css/all.min.css';
 @plugin "daisyui" {
-	themes: fantasy --default, dracula --prefersdark;
+	themes:
+		fantasy --default,
+		dracula --prefersdark;
 }
 
 @theme inline {

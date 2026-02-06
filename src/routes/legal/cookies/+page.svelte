@@ -4,29 +4,29 @@
 
 <div class="flex flex-col gap-6 p-4 tablet:p-8">
 	<h1 class="text-3xl font-bold">Cookie Policy</h1>
-	<p class="text-base-content/60 text-sm">Last updated: {lastUpdated}</p>
+	<p class="text-sm text-base-content/60">Last updated: {lastUpdated}</p>
 
-	<p class="text-base-content/80 leading-relaxed">
+	<p class="leading-relaxed text-base-content/80">
 		This Cookie Policy explains how Spoticromos uses cookies and browser local storage when you use
 		our service.
 	</p>
 
 	<h2 class="mt-4 text-xl font-semibold">1. What Are Cookies?</h2>
-	<p class="text-base-content/80 leading-relaxed">
+	<p class="leading-relaxed text-base-content/80">
 		Cookies are small text files stored on your device by your web browser. They are used to
-		remember information about your visit, such as your authentication status and preferences.
-		Local storage is a similar browser technology that allows websites to store data persistently
-		on your device.
+		remember information about your visit, such as your authentication status and preferences. Local
+		storage is a similar browser technology that allows websites to store data persistently on your
+		device.
 	</p>
 
 	<h2 class="mt-4 text-xl font-semibold">2. Essential Cookies</h2>
-	<p class="text-base-content/80 leading-relaxed">
+	<p class="leading-relaxed text-base-content/80">
 		These cookies are strictly necessary for the service to function. They are always active and do
 		not require your consent.
 	</p>
 
 	<div class="overflow-x-auto">
-		<table class="table table-zebra w-full">
+		<table class="table w-full table-zebra">
 			<thead>
 				<tr>
 					<th class="text-sm">Name</th>
@@ -59,14 +59,14 @@
 	</div>
 
 	<h2 class="mt-4 text-xl font-semibold">3. Analytics Cookies (Optional)</h2>
-	<p class="text-base-content/80 leading-relaxed">
+	<p class="leading-relaxed text-base-content/80">
 		If you give consent, we use Google Analytics 4 (GA4) to understand how visitors interact with
-		our site. These cookies are only set after you explicitly accept analytics in the cookie
-		consent banner. You can withdraw consent at any time by clearing your browser's site data.
+		our site. These cookies are only set after you explicitly accept analytics in the cookie consent
+		banner. You can withdraw consent at any time by clearing your browser's site data.
 	</p>
 
 	<div class="overflow-x-auto">
-		<table class="table table-zebra w-full">
+		<table class="table w-full table-zebra">
 			<thead>
 				<tr>
 					<th class="text-sm">Name</th>
@@ -95,7 +95,7 @@
 		</table>
 	</div>
 
-	<p class="text-base-content/80 mt-2 leading-relaxed">
+	<p class="mt-2 leading-relaxed text-base-content/80">
 		Google Analytics collects data such as pages visited, time spent on pages, browser type, device
 		type, and approximate geographic location (based on anonymized IP). This data is processed by
 		Google. For more information, see
@@ -115,12 +115,12 @@
 	</p>
 
 	<h2 class="mt-4 text-xl font-semibold">4. Local Storage</h2>
-	<p class="text-base-content/80 leading-relaxed">
+	<p class="leading-relaxed text-base-content/80">
 		In addition to cookies, we use your browser's local storage for the following purposes:
 	</p>
 
 	<div class="overflow-x-auto">
-		<table class="table table-zebra w-full">
+		<table class="table w-full table-zebra">
 			<thead>
 				<tr>
 					<th class="text-sm">Key</th>
@@ -139,16 +139,14 @@
 				<tr>
 					<td class="font-mono text-sm">cookie-consent</td>
 					<td class="text-sm">Persistent</td>
-					<td class="text-sm"
-						>Records that you have acknowledged the cookie consent notice.</td
-					>
+					<td class="text-sm">Records that you have acknowledged the cookie consent notice.</td>
 				</tr>
 				<tr>
 					<td class="font-mono text-sm">spotify-cache:*</td>
 					<td class="text-sm">5 minutes</td>
 					<td class="text-sm"
-						>Temporarily caches Spotify API responses (playlists, tracks, albums, artists) to
-						reduce API calls and improve performance. Automatically expires.</td
+						>Temporarily caches Spotify API responses (playlists, tracks, albums, artists) to reduce
+						API calls and improve performance. Automatically expires.</td
 					>
 				</tr>
 				<tr>
@@ -162,60 +160,57 @@
 				<tr>
 					<td class="font-mono text-sm">lyrics-cache:*</td>
 					<td class="text-sm">5 minutes</td>
-					<td class="text-sm"
-						>Temporarily caches lyrics API responses. Automatically expires.</td
-					>
+					<td class="text-sm">Temporarily caches lyrics API responses. Automatically expires.</td>
 				</tr>
 			</tbody>
 		</table>
 	</div>
 
 	<h2 class="mt-4 text-xl font-semibold">5. Managing Cookies and Local Storage</h2>
-	<p class="text-base-content/80 leading-relaxed">
+	<p class="leading-relaxed text-base-content/80">
 		You can manage cookies and local storage through your browser settings:
 	</p>
-	<ul class="text-base-content/80 list-disc space-y-1 pl-6">
+	<ul class="list-disc space-y-1 pl-6 text-base-content/80">
 		<li>
-			<strong>Cookies</strong> — most browsers allow you to view, delete, and block cookies through
-			their settings or preferences menu. Note that blocking the session cookie will prevent you
-			from logging in.
+			<strong>Cookies</strong> — most browsers allow you to view, delete, and block cookies through their
+			settings or preferences menu. Note that blocking the session cookie will prevent you from logging
+			in.
 		</li>
 		<li>
-			<strong>Local Storage</strong> — you can clear local storage through your browser's developer
-			tools or by clearing site data in your browser settings. Clearing local storage will reset
-			your theme preference and cookie consent status.
+			<strong>Local Storage</strong> — you can clear local storage through your browser's developer tools
+			or by clearing site data in your browser settings. Clearing local storage will reset your theme
+			preference and cookie consent status.
 		</li>
 	</ul>
 
 	<h2 class="mt-4 text-xl font-semibold">6. Third-Party Cookies</h2>
-	<p class="text-base-content/80 leading-relaxed">
+	<p class="leading-relaxed text-base-content/80">
 		With your consent, Google Analytics sets cookies on your device as described in section 3. We do
 		not use advertising networks or social media tracking pixels. Apart from Google Analytics, no
 		other third-party cookies are set.
 	</p>
 
 	<h2 class="mt-4 text-xl font-semibold">7. Your Consent Choices</h2>
-	<p class="text-base-content/80 leading-relaxed">
+	<p class="leading-relaxed text-base-content/80">
 		When you first visit Spoticromos, you will see a consent banner offering two choices:
 	</p>
-	<ul class="text-base-content/80 list-disc space-y-1 pl-6">
+	<ul class="list-disc space-y-1 pl-6 text-base-content/80">
 		<li>
-			<strong>Accept All</strong> — enables essential cookies and analytics cookies (Google
-			Analytics).
+			<strong>Accept All</strong> — enables essential cookies and analytics cookies (Google Analytics).
 		</li>
 		<li>
-			<strong>Essential Only</strong> — enables only the cookies required for the site to function.
-			No analytics data will be collected.
+			<strong>Essential Only</strong> — enables only the cookies required for the site to function. No
+			analytics data will be collected.
 		</li>
 	</ul>
-	<p class="text-base-content/80 mt-2 leading-relaxed">
+	<p class="mt-2 leading-relaxed text-base-content/80">
 		You can change your preference at any time by clearing your browser's local storage for this
 		site, which will reset the consent banner.
 	</p>
 
 	<h2 class="mt-4 text-xl font-semibold">8. Changes to This Policy</h2>
-	<p class="text-base-content/80 leading-relaxed">
-		We may update this Cookie Policy from time to time. Changes will be posted on this page with
-		an updated revision date.
+	<p class="leading-relaxed text-base-content/80">
+		We may update this Cookie Policy from time to time. Changes will be posted on this page with an
+		updated revision date.
 	</p>
 </div>
