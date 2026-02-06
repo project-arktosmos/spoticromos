@@ -8,6 +8,7 @@
 	import CollectionItem from '$components/core/CollectionItem.svelte';
 	import TriviaGame from '$components/core/TriviaGame.svelte';
 	import PairsGame from '$components/core/PairsGame.svelte';
+	import RewardClaimModal from '$components/core/RewardClaimModal.svelte';
 
 	let { data } = $props();
 
@@ -22,6 +23,8 @@
 
 	let showTriviaModal = $state(false);
 	let showPairsModal = $state(false);
+	let showClaimModal = $state(false);
+	let unclaimedRewards = $state(0);
 
 	let modalItemId = $state<number | null>(null);
 	let modalItem = $derived(modalItemId !== null ? items.find(i => i.id === modalItemId) ?? null : null);
@@ -78,6 +81,7 @@
 		ownedItemIds = new Set(json.ownedItemIds ?? []);
 		stuckItemIds = new Set(json.stuckItemIds ?? []);
 		allRarities = json.rarities ?? [];
+		unclaimedRewards = json.unclaimedRewards ?? 0;
 		const rarityMap = new Map<number, OwnedItemRarity[]>();
 		for (const r of json.ownedItemRarities ?? []) {
 			const list = rarityMap.get(r.collection_item_id) ?? [];
@@ -259,6 +263,9 @@
 			<div class="flex flex-col justify-center gap-2">
 				<button class="btn btn-primary btn-sm" onclick={() => showTriviaModal = true}>Play Trivia</button>
 				<button class="btn btn-secondary btn-sm" onclick={() => showPairsModal = true}>Play Pairs</button>
+				<button class="btn btn-accent btn-sm" disabled={unclaimedRewards === 0} onclick={() => showClaimModal = true}>
+					Claim Rewards{unclaimedRewards > 0 ? ` (${unclaimedRewards})` : ''}
+				</button>
 			</div>
 		</div>
 
@@ -405,4 +412,20 @@
 			{/key}
 		</div>
 	</div>
+{/if}
+
+{#if collection}
+	<RewardClaimModal
+		collectionId={collection.id}
+		collectionName={collection.name}
+		{unclaimedRewards}
+		open={showClaimModal}
+		onclose={(claimedCount) => {
+			showClaimModal = false;
+			if (claimedCount > 0) {
+				unclaimedRewards = Math.max(0, unclaimedRewards - claimedCount);
+				refetchCollectionData();
+			}
+		}}
+	/>
 {/if}

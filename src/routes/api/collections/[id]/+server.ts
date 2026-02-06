@@ -11,6 +11,8 @@ import {
 } from '$lib/server/repositories/ownership.repository';
 import type { OwnedItemRarity } from '$lib/server/repositories/ownership.repository';
 import { findAllRarities } from '$lib/server/repositories/rarity.repository';
+import { query } from '$lib/server/db';
+import type { RowDataPacket } from 'mysql2/promise';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ params, locals }) => {
@@ -32,15 +34,23 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 		let ownedItemIds: number[] = [];
 		let ownedItemRarities: OwnedItemRarity[] = [];
 		let stuckItemIds: number[] = [];
+		let unclaimedRewards = 0;
 		if (locals.user) {
 			ownedItemIds = await findUserOwnedItemIds(locals.user.spotifyId, id);
 			ownedItemRarities = await findUserOwnedItemsWithRarity(locals.user.spotifyId, id);
 			stuckItemIds = await findStuckItemIds(locals.user.spotifyId, id);
+			const [rewardRows] = await query<(RowDataPacket & { unclaimed_rewards: number })[]>(
+				`SELECT unclaimed_rewards FROM user_collections WHERE user_spotify_id = ? AND collection_id = ?`,
+				[locals.user.spotifyId, id]
+			);
+			if (rewardRows.length > 0) {
+				unclaimedRewards = rewardRows[0].unclaimed_rewards;
+			}
 		}
 
 		const rarities = await findAllRarities();
 
-		return json({ collection, items, ownedItemIds, ownedItemRarities, stuckItemIds, rarities });
+		return json({ collection, items, ownedItemIds, ownedItemRarities, stuckItemIds, rarities, unclaimedRewards });
 	} catch (err) {
 		console.error('Failed to fetch collection:', err);
 		const message = err instanceof Error ? err.message : 'Unknown error';
