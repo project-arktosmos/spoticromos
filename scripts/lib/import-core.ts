@@ -130,6 +130,12 @@ export async function fetchPlaylistViaEmbed(
 	const embed = await fetchPlaylistFromEmbed(playlistId);
 	if (!embed || embed.trackList.length === 0) return null;
 
+	if (embed.trackList.length === 100) {
+		console.warn(
+			'  ⚠ Embed returned exactly 100 tracks — playlist may have more that were truncated.'
+		);
+	}
+
 	console.log(`  Fetching full track data for ${embed.trackList.length} tracks...`);
 
 	const tracks: SpotifyTrack[] = [];

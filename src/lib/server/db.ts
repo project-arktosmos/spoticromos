@@ -6,7 +6,7 @@ let pool: Pool;
 
 function getPool(): Pool {
 	if (!pool) {
-		pool = mysql.createPool({
+		const config = {
 			host: env.DB_HOST || 'localhost',
 			port: Number(env.DB_PORT) || 3306,
 			user: env.DB_USER || 'root',
@@ -15,9 +15,26 @@ function getPool(): Pool {
 			waitForConnections: true,
 			connectionLimit: 10,
 			ssl: env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined
-		});
+		};
+		console.log(
+			`[DB] Creating pool: host=${config.host}, port=${config.port}, user=${config.user}, database=${config.database}, ssl=${!!config.ssl}`
+		);
+		pool = mysql.createPool(config);
 	}
 	return pool;
+}
+
+export async function checkConnection(): Promise<void> {
+	const p = getPool();
+	try {
+		const conn = await p.getConnection();
+		await conn.ping();
+		conn.release();
+		console.log('[DB] Connection successful');
+	} catch (err) {
+		console.error('[DB] Connection FAILED:', err);
+		process.exit(1);
+	}
 }
 
 export async function query<T extends RowDataPacket[]>(

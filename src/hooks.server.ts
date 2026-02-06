@@ -1,5 +1,6 @@
 import type { Handle } from '@sveltejs/kit';
 import { initializeSchema } from '$lib/server/schema';
+import { checkConnection } from '$lib/server/db';
 import { refreshUserToken } from '$lib/server/spotify-token';
 import '$services/i18n';
 import { createSession, findSession } from '$lib/server/repositories/session.repository';
@@ -12,8 +13,9 @@ import {
 let schemaInitialized = false;
 
 export const handle: Handle = async ({ event, resolve }) => {
-	// Initialize DB schema once
+	// Check DB connection and initialize schema once
 	if (!schemaInitialized) {
+		await checkConnection();
 		await initializeSchema();
 		schemaInitialized = true;
 	}
