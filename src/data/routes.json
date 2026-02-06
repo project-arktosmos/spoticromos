@@ -4,10 +4,6 @@
 		"label": "Home"
 	},
 	{
-		"path": "/collections",
-		"label": "Collections"
-	},
-	{
 		"path": "/database",
 		"label": "Database"
 	},

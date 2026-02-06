@@ -1,6 +1,7 @@
 import type { Handle } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { initializeSchema } from '$lib/server/schema';
+import '$services/i18n';
 import { findSession } from '$lib/server/repositories/session.repository';
 import { findUserBySpotifyId, updateUserTokens } from '$lib/server/repositories/user.repository';
 

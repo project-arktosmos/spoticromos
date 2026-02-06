@@ -1,14 +1,35 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { CollectionRow } from '$lib/server/repositories/collection.repository';
-	import type { CollectionProgress } from '$lib/server/repositories/ownership.repository';
+	import type { SessionUser } from '$types/auth.type';
 	import CollectionBadge from '$components/core/CollectionBadge.svelte';
+
+	interface CollectionRow {
+		id: number;
+		name: string;
+		cover_image_url: string | null;
+		spotify_playlist_id: string;
+		spotify_owner_id: string | null;
+		created_at: string;
+		creator_display_name: string | null;
+		creator_avatar_url: string | null;
+	}
 
 	interface CollectionWithCount extends CollectionRow {
 		track_count: number;
 	}
 
-	let { data } = $props();
+	interface CollectionProgress {
+		collection_id: number;
+		completed_slots: number;
+		total_slots: number;
+		highest_completed_rarity_color: string | null;
+	}
+
+	interface Props {
+		user: SessionUser | null;
+	}
+
+	let { user }: Props = $props();
 
 	let collections = $state<CollectionWithCount[]>([]);
 	let ownedIds = $state<Set<number>>(new Set());
@@ -80,7 +101,7 @@
 	async function toggleOwnership(e: Event, collectionId: number) {
 		e.preventDefault();
 		e.stopPropagation();
-		if (!data.user) return;
+		if (!user) return;
 		const isOwned = ownedIds.has(collectionId);
 		const method = isOwned ? 'DELETE' : 'POST';
 		try {
@@ -101,7 +122,7 @@
 	async function unlockCollection(e: Event, collectionId: number) {
 		e.preventDefault();
 		e.stopPropagation();
-		if (!data.user) return;
+		if (!user) return;
 		try {
 			const res = await fetch(`/api/collections/${collectionId}/own`, { method: 'POST' });
 			if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -115,7 +136,10 @@
 </script>
 
 <div class="mx-auto flex min-h-screen max-w-4xl flex-col gap-6 p-8">
-	<h1 class="text-2xl font-bold">Collections</h1>
+	<div class="flex items-center justify-between">
+		<h1 class="text-2xl font-bold">Collections</h1>
+		<a href="/import" class="btn btn-primary btn-sm">Create Collection</a>
+	</div>
 
 	<div class="join w-full">
 		<input
@@ -170,8 +194,8 @@
 				<a href="/collections/{collection.id}">
 					<CollectionBadge
 						{collection}
-						owned={!data.user || ownedIds.has(collection.id)}
-						onUnlock={data.user && !ownedIds.has(collection.id) ? (e) => unlockCollection(e, collection.id) : undefined}
+						owned={!user || ownedIds.has(collection.id)}
+						onUnlock={user && !ownedIds.has(collection.id) ? (e) => unlockCollection(e, collection.id) : undefined}
 						progress={cp?.completed_slots ?? 0}
 						progressMax={cp?.total_slots ?? 0}
 						rarityColor={cp?.highest_completed_rarity_color ?? null}
