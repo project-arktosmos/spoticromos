@@ -61,11 +61,26 @@
 	let innerBorderClasses = $derived(classNames(
 		{ 'border-dashed': owned && !stuck }
 	));
+
+	let artistCellBgStyle = $derived(() => {
+		if (!rarityColor) return '';
+		if (stuck) return `background-color: ${rarityColor}80;`;
+		if (owned) return `background-color: ${rarityColor}80;`;
+		return `background-color: ${rarityColor}80;`;
+	});
+
+	let albumCellStyle = $derived(() => {
+		const border = innerBorderStyle();
+		if (!rarityColor) return border;
+		if (stuck) return `${border} background-color: ${rarityColor};`;
+		if (owned) return `${border} background-color: ${rarityColor}40;`;
+		return `${border} background-color: ${rarityColor}20;`;
+	});
 </script>
 
 <div class={computedClasses} style={cardStyle()}>
 	<!-- Row 1: Track name (colspan 2) -->
-	<div class="col-span-2 flex items-center justify-center p-2">
+	<div class="col-span-2 flex items-center justify-center bg-base-300 p-2">
 		<h3 class="truncate text-center text-sm font-semibold">{item.track_name}</h3>
 	</div>
 
@@ -80,7 +95,7 @@
 		class={classNames('col-span-2 grid grid-cols-2', { 'cursor-pointer': onToggleStick && owned })}
 		onclick={() => { if (onToggleStick && owned) onToggleStick(); }}
 	>
-		<div class={classNames("border-r-2", innerBorderClasses)} style={innerBorderStyle()}>
+		<div class={classNames("border-r-2 aspect-square overflow-hidden flex items-center justify-center bg-base-300", innerBorderClasses)} style={albumCellStyle()}>
 			{#if item.album_cover_url}
 				<img
 					src={item.album_cover_url}
@@ -93,7 +108,7 @@
 				</div>
 			{/if}
 		</div>
-		<div class="flex aspect-square w-full items-center justify-center overflow-hidden p-3">
+		<div class="flex w-full items-center justify-center overflow-hidden p-3" style={artistCellBgStyle()}>
 			{#if item.artist_image_url}
 				<img
 					src={item.artist_image_url}
@@ -118,10 +133,10 @@
 	{/if}
 
 	<!-- Row 3: Album | Artist -->
-	<div class="flex items-center justify-center p-2">
+	<div class="flex min-h-12 items-center justify-center bg-base-300 p-2">
 		<p class="text-base-content/60 line-clamp-2 text-center text-xs">{item.album_name ?? '--'}</p>
 	</div>
-	<div class="flex items-center justify-center  p-2">
+	<div class="flex min-h-12 items-center justify-center bg-base-300 p-2">
 		<p class="text-base-content/70 line-clamp-2 text-center text-xs">{item.artists ?? '--'}</p>
 	</div>
 

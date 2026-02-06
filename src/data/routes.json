@@ -15,20 +15,8 @@
 		"path": "/import",
 		"label": "Import"
 	},
-	{
-		"path": "/spotify",
-		"label": "Spotify"
-	},
-	{
-		"path": "/rarity",
-		"label": "Rarities"
-	},
 {
 		"path": "/trivia-templates",
 		"label": "Trivia Templates"
-	},
-	{
-		"path": "/components",
-		"label": "Components"
 	}
 ]

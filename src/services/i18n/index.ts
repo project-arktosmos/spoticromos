@@ -7,5 +7,5 @@ register('qq', () => import('./locales/qq.json'));
 // Initialize i18n
 init({
 	fallbackLocale: 'en',
-	initialLocale: getLocaleFromNavigator()
+	initialLocale: getLocaleFromNavigator() ?? 'en'
 });

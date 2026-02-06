@@ -14,7 +14,7 @@
 
 	onMount(() => {
 		if (!spotifyService.isAuthenticated()) {
-			goto('/spotify');
+			goto('/profile');
 			return;
 		}
 		fetchPlaylists();
@@ -56,7 +56,7 @@
 
 	function handleLogout() {
 		spotifyService.logout();
-		goto('/spotify');
+		goto('/profile');
 	}
 </script>
 
@@ -79,7 +79,18 @@
 
 		<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 			{#each playlists as playlist (playlist.id)}
-				<a href="/import/{playlist.id}" class="card bg-base-200 shadow-sm transition-shadow hover:shadow-md">
+				{@const imported = importedIds.has(playlist.id)}
+				<a
+					href={imported ? undefined : `/import/${playlist.id}`}
+					class={classNames(
+						'card bg-base-200 shadow-sm',
+						imported
+							? 'cursor-default opacity-50'
+							: 'transition-shadow hover:shadow-md'
+					)}
+					aria-disabled={imported}
+					onclick={imported ? (e) => e.preventDefault() : undefined}
+				>
 					{#if playlist.images?.[0]?.url}
 						<figure>
 							<img
@@ -96,7 +107,12 @@
 						</figure>
 					{/if}
 					<div class="card-body p-4">
-						<h2 class="card-title text-base">{playlist.name}</h2>
+						<div class="flex items-center justify-between">
+							<h2 class="card-title text-base">{playlist.name}</h2>
+							{#if imported}
+								<span class="badge badge-success badge-sm">Imported</span>
+							{/if}
+						</div>
 						<p class="text-base-content/60 text-sm">
 							{playlist.tracks.total} tracks
 						</p>

@@ -33,7 +33,7 @@
 
 	onMount(() => {
 		if (!spotifyService.isAuthenticated()) {
-			goto('/spotify');
+			goto('/profile');
 			return;
 		}
 		fetchPlaylist();
