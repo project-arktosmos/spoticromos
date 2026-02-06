@@ -1,4 +1,4 @@
-import { json, error } from '@sveltejs/kit';
+import { json, error, isHttpError } from '@sveltejs/kit';
 import { initializeSchema } from '$lib/server/schema';
 import { findUserBySpotifyId } from '$lib/server/repositories/user.repository';
 import { findCollectionsByIds } from '$lib/server/repositories/collection.repository';
@@ -11,7 +11,7 @@ import type { RequestHandler } from './$types';
 export const GET: RequestHandler = async ({ params }) => {
 	const spotifyId = params.id;
 	if (!spotifyId) {
-		return error(400, 'Missing user ID');
+		error(400, 'Missing user ID');
 	}
 
 	try {
@@ -19,7 +19,7 @@ export const GET: RequestHandler = async ({ params }) => {
 
 		const user = await findUserBySpotifyId(spotifyId);
 		if (!user) {
-			return error(404, 'User not found');
+			error(404, 'User not found');
 		}
 
 		const ownedCollectionIds = await findUserOwnedCollectionIds(spotifyId);
@@ -36,8 +36,9 @@ export const GET: RequestHandler = async ({ params }) => {
 			collectionProgress
 		});
 	} catch (err) {
+		if (isHttpError(err)) throw err;
 		console.error('Failed to fetch profile:', err);
 		const message = err instanceof Error ? err.message : 'Unknown error';
-		return error(500, `Failed to fetch profile: ${message}`);
+		error(500, `Failed to fetch profile: ${message}`);
 	}
 };

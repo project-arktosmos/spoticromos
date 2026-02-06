@@ -1,4 +1,4 @@
-import { json, error } from '@sveltejs/kit';
+import { json, error, isHttpError } from '@sveltejs/kit';
 import { initializeSchema } from '$lib/server/schema';
 import { findUserBySpotifyId } from '$lib/server/repositories/user.repository';
 import {
@@ -18,10 +18,10 @@ export const GET: RequestHandler = async ({ params }) => {
 	const collectionId = Number(params.collectionId);
 
 	if (!spotifyId) {
-		return error(400, 'Missing user ID');
+		error(400, 'Missing user ID');
 	}
 	if (!Number.isFinite(collectionId) || collectionId <= 0) {
-		return error(400, 'Invalid collection ID');
+		error(400, 'Invalid collection ID');
 	}
 
 	try {
@@ -29,12 +29,12 @@ export const GET: RequestHandler = async ({ params }) => {
 
 		const user = await findUserBySpotifyId(spotifyId);
 		if (!user) {
-			return error(404, 'User not found');
+			error(404, 'User not found');
 		}
 
 		const collection = await findCollectionById(collectionId);
 		if (!collection) {
-			return error(404, 'Collection not found');
+			error(404, 'Collection not found');
 		}
 
 		const items = await findCollectionItemsWithArtists(collectionId);
@@ -57,8 +57,9 @@ export const GET: RequestHandler = async ({ params }) => {
 			rarities
 		});
 	} catch (err) {
+		if (isHttpError(err)) throw err;
 		console.error('Failed to fetch profile collection:', err);
 		const message = err instanceof Error ? err.message : 'Unknown error';
-		return error(500, `Failed to fetch profile collection: ${message}`);
+		error(500, `Failed to fetch profile collection: ${message}`);
 	}
 };

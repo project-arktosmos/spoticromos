@@ -20,14 +20,6 @@
 		"label": "Spotify"
 	},
 	{
-		"path": "/pairs",
-		"label": "Pairs"
-	},
-	{
-		"path": "/rewards",
-		"label": "Rewards"
-	},
-	{
 		"path": "/rarity",
 		"label": "Rarities"
 	},
