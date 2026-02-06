@@ -155,32 +155,16 @@ export const DEFAULT_CONFIGS: Record<TriviaQuestionType, TriviaQuestionConfig> =
 };
 
 // ---------------------------------------------------------------------------
-// DB row types
+// DB row type
 // ---------------------------------------------------------------------------
 
-export interface TriviaTemplateRow {
+export interface TriviaQuestionRow {
 	id: number;
-	name: string;
-	description: string | null;
-	created_at: string;
-	updated_at: string;
-}
-
-export interface TriviaTemplateQuestionRow {
-	id: number;
-	template_id: number;
 	question_type: TriviaQuestionType;
 	config: TriviaQuestionConfig;
 	position: number;
 	created_at: string;
-}
-
-// ---------------------------------------------------------------------------
-// Expanded template (with full questions)
-// ---------------------------------------------------------------------------
-
-export interface TriviaTemplateWithQuestions extends TriviaTemplateRow {
-	questions: TriviaTemplateQuestionRow[];
+	updated_at: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -198,24 +182,15 @@ export interface CollectionSummary {
 // API payload types
 // ---------------------------------------------------------------------------
 
-export interface CreateTriviaTemplatePayload {
-	name: string;
-	description?: string;
-	questions: Array<{
-		question_type: TriviaQuestionType;
-		config: TriviaQuestionConfig;
-		position: number;
-	}>;
+export interface CreateTriviaQuestionPayload {
+	question_type: TriviaQuestionType;
+	config: TriviaQuestionConfig;
 }
 
-export interface UpdateTriviaTemplatePayload {
-	name?: string;
-	description?: string;
-	questions?: Array<{
-		question_type: TriviaQuestionType;
-		config: TriviaQuestionConfig;
-		position: number;
-	}>;
+export interface UpdateTriviaQuestionPayload {
+	question_type?: TriviaQuestionType;
+	config?: TriviaQuestionConfig;
+	position?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -230,7 +205,7 @@ export interface TriviaOption {
 }
 
 export interface GeneratedTriviaQuestion {
-	templateQuestionId: number;
+	questionId: number;
 	questionType: TriviaQuestionType;
 	questionText: string;
 	options: TriviaOption[];
@@ -239,11 +214,28 @@ export interface GeneratedTriviaQuestion {
 }
 
 export interface GeneratedTriviaSet {
-	templateId: number;
-	templateName: string;
 	collectionId: number;
 	collectionName: string;
 	questions: GeneratedTriviaQuestion[];
 	skippedCount: number;
 	generatedAt: string;
+}
+
+// ---------------------------------------------------------------------------
+// Client-safe types (no answer data sent to browser)
+// ---------------------------------------------------------------------------
+
+export interface ClientTriviaOption {
+	label: string;
+	imageUrl?: string | null;
+}
+
+export interface ClientTriviaQuestion {
+	questionId: number;
+	questionType: TriviaQuestionType;
+	questionText: string;
+	options: ClientTriviaOption[];
+	imageUrl: string | null;
+	/** Position in the server session's question list */
+	sessionIndex: number;
 }

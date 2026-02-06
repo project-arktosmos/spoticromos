@@ -66,6 +66,18 @@ export async function findUserBySpotifyId(spotifyId: string): Promise<UserRow | 
 	return rows.length ? rows[0] : null;
 }
 
+export async function createAnonymousUser(anonId: string): Promise<void> {
+	await execute(
+		`INSERT INTO users (spotify_id, display_name)
+		 VALUES (?, 'Anonymous Player')`,
+		[anonId]
+	);
+}
+
+export async function deleteUser(spotifyId: string): Promise<void> {
+	await execute('DELETE FROM users WHERE spotify_id = ?', [spotifyId]);
+}
+
 export async function updateUserTokens(
 	spotifyId: string,
 	accessToken: string,

@@ -42,23 +42,42 @@ export function validateConfig(
 				typeof c.fragmentLength === 'number' &&
 				c.fragmentLength >= 3
 			);
+		case TriviaQuestionType.WhatLabelReleasedIt:
+			return (
+				typeof c.optionCount === 'number' &&
+				c.optionCount >= 2 &&
+				(c.subject === 'song' || c.subject === 'album')
+			);
+		case TriviaQuestionType.FinishTheLyric:
+			return typeof c.optionCount === 'number' && c.optionCount >= 2;
+		case TriviaQuestionType.WhatSongFromLyrics:
+			return (
+				typeof c.optionCount === 'number' &&
+				c.optionCount >= 2 &&
+				typeof c.fragmentLength === 'number' &&
+				c.fragmentLength >= 3
+			);
+		case TriviaQuestionType.NameTheAlbumFromCover:
+			return typeof c.optionCount === 'number' && c.optionCount >= 2;
+		case TriviaQuestionType.OddOneOut:
+			return true;
+		case TriviaQuestionType.WhatGenreForArtist:
+			return typeof c.optionCount === 'number' && c.optionCount >= 2;
+		case TriviaQuestionType.MostFollowedArtist:
+			return typeof c.optionCount === 'number' && c.optionCount >= 2;
 		default:
 			return false;
 	}
 }
 
-export function validateQuestions(questions: unknown[]): string | null {
-	for (let i = 0; i < questions.length; i++) {
-		const q = questions[i] as Record<string, unknown>;
-		if (!q || typeof q !== 'object') {
-			return `Question ${i + 1}: invalid object`;
-		}
-		if (!validateQuestionType(q.question_type)) {
-			return `Question ${i + 1}: invalid question_type "${q.question_type}"`;
-		}
-		if (!validateConfig(q.question_type, q.config)) {
-			return `Question ${i + 1}: invalid config for type "${q.question_type}"`;
-		}
+export function validateQuestion(q: unknown): string | null {
+	if (!q || typeof q !== 'object') return 'Invalid question object';
+	const obj = q as Record<string, unknown>;
+	if (!validateQuestionType(obj.question_type)) {
+		return `Invalid question_type "${obj.question_type}"`;
+	}
+	if (!validateConfig(obj.question_type, obj.config)) {
+		return `Invalid config for type "${obj.question_type}"`;
 	}
 	return null;
 }

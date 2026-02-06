@@ -7,6 +7,7 @@
 	import ThemeToggle from '$components/core/ThemeToggle.svelte';
 	import AppFooter from '$components/core/AppFooter.svelte';
 	import CookieBanner from '$components/core/CookieBanner.svelte';
+	import ToastContainer from '$components/core/ToastContainer.svelte';
 
 	let { data, children } = $props();
 
@@ -23,9 +24,7 @@
 <div class="flex min-h-screen flex-col">
 	<TopNavbar user={data.user} />
 	<div class="flex flex-1">
-		{#if data.user}
-			<AppMenu />
-		{/if}
+		<AppMenu />
 		<main class="flex flex-1 flex-col">
 			{@render children?.()}
 			<AppFooter />
@@ -34,3 +33,4 @@
 </div>
 <ThemeToggle />
 <CookieBanner />
+<ToastContainer />

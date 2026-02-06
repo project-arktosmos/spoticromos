@@ -15,9 +15,8 @@
 <div class={classNames('flex flex-col gap-4', classes)}>
 	<div class="flex items-center justify-between">
 		<div>
-			<h2 class="text-lg font-bold">{trivia.templateName}</h2>
+			<h2 class="text-lg font-bold">{trivia.collectionName}</h2>
 			<p class="text-base-content/60 text-sm">
-				Collection: {trivia.collectionName} &middot;
 				{trivia.questions.length} question{trivia.questions.length !== 1 ? 's' : ''} generated
 				{#if trivia.skippedCount > 0}
 					<span class="text-warning">({trivia.skippedCount} skipped)</span>

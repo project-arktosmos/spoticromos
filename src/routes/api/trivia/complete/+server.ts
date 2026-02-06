@@ -19,11 +19,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		return error(400, 'Invalid JSON body');
 	}
 
-	const { collectionId, score, totalQuestions, totalRewards } = body as {
+	const { collectionId, score, totalQuestions } = body as {
 		collectionId?: unknown;
 		score?: unknown;
 		totalQuestions?: unknown;
-		totalRewards?: unknown;
 	};
 
 	if (typeof collectionId !== 'number' || !Number.isFinite(collectionId) || collectionId <= 0) {
@@ -35,17 +34,14 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	if (typeof totalQuestions !== 'number' || !Number.isFinite(totalQuestions) || totalQuestions < 1) {
 		return error(400, 'Missing or invalid totalQuestions');
 	}
-	if (typeof totalRewards !== 'number' || !Number.isFinite(totalRewards) || totalRewards < 0) {
-		return error(400, 'Missing or invalid totalRewards');
+	if (score > totalQuestions) {
+		return error(400, 'Score cannot exceed totalQuestions');
 	}
 
-	// Sanity check: totalRewards cannot exceed the theoretical max if every answer were correct
-	let maxPossible = 0;
-	for (let q = 1; q <= totalQuestions; q++) {
-		maxPossible += 1 + Math.floor((q - 1) / 5);
-	}
-	if (totalRewards > maxPossible) {
-		return error(400, 'Invalid reward amount');
+	// Compute rewards server-side: 1 + floor((q-1)/5) per correct answer
+	let totalRewards = 0;
+	for (let q = 1; q <= score; q++) {
+		totalRewards += 1 + Math.floor((q - 1) / 5);
 	}
 
 	try {

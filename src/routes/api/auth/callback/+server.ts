@@ -1,7 +1,8 @@
 import { redirect, error } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { upsertUser } from '$lib/server/repositories/user.repository';
-import { createSession } from '$lib/server/repositories/session.repository';
+import { createSession, findSession } from '$lib/server/repositories/session.repository';
+import { mergeAnonymousUser } from '$lib/server/repositories/merge.repository';
 import type { RequestHandler } from './$types';
 
 interface SpotifyTokenResponse {
@@ -90,6 +91,15 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 		refreshToken: tokens.refresh_token,
 		tokenExpiresAt
 	});
+
+	// Merge anonymous user data if the current session belongs to an anon user
+	const existingSessionId = cookies.get('session');
+	if (existingSessionId) {
+		const existingSession = await findSession(existingSessionId);
+		if (existingSession && existingSession.user_spotify_id.startsWith('anon-')) {
+			await mergeAnonymousUser(existingSession.user_spotify_id, profile.id);
+		}
+	}
 
 	// Create session
 	const sessionId = await createSession(profile.id);

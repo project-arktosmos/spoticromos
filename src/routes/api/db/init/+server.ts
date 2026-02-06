@@ -19,8 +19,7 @@ export const GET: RequestHandler = async () => {
 				'collection_artist_images',
 				'collection_items',
 				'collection_item_artists',
-				'trivia_templates',
-				'trivia_template_questions'
+				'trivia_questions'
 			]
 		});
 	} catch (err) {

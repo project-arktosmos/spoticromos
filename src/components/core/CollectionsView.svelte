@@ -138,7 +138,9 @@
 <div class="mx-auto flex min-h-screen max-w-4xl flex-col gap-6 p-8">
 	<div class="flex items-center justify-between">
 		<h1 class="text-2xl font-bold">Collections</h1>
-		<a href="/import" class="btn btn-primary btn-sm">Create Collection</a>
+		{#if user && !user.isAnonymous}
+			<a href="/import" class="btn btn-primary btn-sm">Create Collection</a>
+		{/if}
 	</div>
 
 	<div class="join w-full">

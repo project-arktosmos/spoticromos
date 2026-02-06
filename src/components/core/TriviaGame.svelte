@@ -1,9 +1,6 @@
 <script lang="ts">
 	import classNames from 'classnames';
-	import type {
-		TriviaTemplateWithQuestions,
-		GeneratedTriviaQuestion
-	} from '$types/trivia.type';
+	import type { GeneratedTriviaQuestion } from '$types/trivia.type';
 
 	interface Props {
 		collectionId: number;
@@ -56,7 +53,6 @@
 	let isFetchingMore = $state(false);
 	let fetchExhausted = $state(false);
 	let usedQuestionTexts = $state<Set<string>>(new Set());
-	let cachedTemplates = $state<TriviaTemplateWithQuestions[]>([]);
 	let waitingForFetch = $state(false);
 
 	// ---------------------------------------------------------------------------
@@ -96,31 +92,19 @@
 	// Question fetching
 	// ---------------------------------------------------------------------------
 
-	async function generateQuestions(
-		templates: TriviaTemplateWithQuestions[]
-	): Promise<GeneratedTriviaQuestion[]> {
-		const allQuestions: GeneratedTriviaQuestion[] = [];
-
-		for (const template of templates) {
-			if (template.questions.length === 0) continue;
-
-			try {
-				const res = await fetch(`/api/trivia-templates/${template.id}/generate`, {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ collectionId })
-				});
-				if (!res.ok) continue;
-
-				const data = await res.json();
-				const generated = data.trivia?.questions ?? [];
-				allQuestions.push(...generated);
-			} catch {
-				// Skip failed templates
-			}
+	async function generateQuestions(): Promise<GeneratedTriviaQuestion[]> {
+		try {
+			const res = await fetch('/api/trivia-questions/generate', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ collectionId })
+			});
+			if (!res.ok) return [];
+			const data = await res.json();
+			return data.trivia?.questions ?? [];
+		} catch {
+			return [];
 		}
-
-		return allQuestions;
 	}
 
 	async function fetchMoreQuestions() {
@@ -128,7 +112,7 @@
 		isFetchingMore = true;
 
 		try {
-			const newQuestions = await generateQuestions(cachedTemplates);
+			const newQuestions = await generateQuestions();
 			const unique = trackQuestionTexts(newQuestions);
 
 			if (unique.length === 0) {
@@ -141,7 +125,6 @@
 		} finally {
 			isFetchingMore = false;
 
-			// If the player was waiting for more questions, advance now
 			if (waitingForFetch) {
 				waitingForFetch = false;
 				advanceOrFinish();
@@ -165,18 +148,7 @@
 		errorMsg = '';
 
 		try {
-			const templatesRes = await fetch('/api/trivia-templates?expand=questions');
-			if (!templatesRes.ok) throw new Error(`HTTP ${templatesRes.status}`);
-			const templatesData = await templatesRes.json();
-			const templates: TriviaTemplateWithQuestions[] = templatesData.templates ?? [];
-
-			if (templates.length === 0) {
-				throw new Error('No trivia templates available. Create some first.');
-			}
-
-			cachedTemplates = templates;
-
-			const allQuestions = await generateQuestions(templates);
+			const allQuestions = await generateQuestions();
 
 			if (allQuestions.length === 0) {
 				throw new Error('Could not generate any questions for this collection.');
@@ -197,7 +169,6 @@
 			rewardResult = null;
 			waitingForFetch = false;
 
-			// Pre-fetch if initial batch is small
 			checkFetchThreshold();
 		} catch (err) {
 			errorMsg = err instanceof Error ? err.message : 'Failed to generate questions';
@@ -237,10 +208,8 @@
 			answered = false;
 			checkFetchThreshold();
 		} else if (isFetchingMore) {
-			// Wait for the in-flight fetch to complete
 			waitingForFetch = true;
 		} else {
-			// No more questions available
 			questionsExhausted = true;
 			gameFinished = true;
 			submitResult();
@@ -257,8 +226,7 @@
 				body: JSON.stringify({
 					collectionId,
 					score,
-					totalQuestions: questionNumber,
-					totalRewards: totalRewardsEarned
+					totalQuestions: questionNumber
 				})
 			});
 			if (res.ok) {
@@ -293,7 +261,6 @@
 		isFetchingMore = false;
 		fetchExhausted = false;
 		usedQuestionTexts = new Set();
-		cachedTemplates = [];
 		waitingForFetch = false;
 	}
 

@@ -41,3 +41,31 @@ export async function getClientToken(): Promise<string> {
 
 	return tokenCache.accessToken;
 }
+
+export async function refreshUserToken(
+	refreshToken: string
+): Promise<{ accessToken: string; refreshToken: string; expiresAt: number } | null> {
+	const clientId = env.SPOTIFY_CLIENT_ID;
+	const clientSecret = env.SPOTIFY_CLIENT_SECRET;
+	if (!clientId || !clientSecret) return null;
+
+	const response = await fetch('https://accounts.spotify.com/api/token', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+		body: new URLSearchParams({
+			client_id: clientId,
+			client_secret: clientSecret,
+			grant_type: 'refresh_token',
+			refresh_token: refreshToken
+		})
+	});
+
+	if (!response.ok) return null;
+
+	const data = await response.json();
+	return {
+		accessToken: data.access_token,
+		refreshToken: data.refresh_token || refreshToken,
+		expiresAt: Date.now() + data.expires_in * 1000
+	};
+}

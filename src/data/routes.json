@@ -12,7 +12,11 @@
 		"label": "Import"
 	},
 {
-		"path": "/trivia-templates",
-		"label": "Trivia Templates"
+		"path": "/search",
+		"label": "Search"
+	},
+	{
+		"path": "/trivia-questions",
+		"label": "Trivia Questions"
 	}
 ]

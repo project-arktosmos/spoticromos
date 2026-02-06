@@ -243,27 +243,17 @@ CREATE TABLE IF NOT EXISTS user_collection_items (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 `;
 
-const CREATE_TRIVIA_TEMPLATES = `
-CREATE TABLE IF NOT EXISTS trivia_templates (
-  id          INT           NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  name        VARCHAR(500)  NOT NULL,
-  description TEXT          DEFAULT NULL,
-  created_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-`;
-
-const CREATE_TRIVIA_TEMPLATE_QUESTIONS = `
-CREATE TABLE IF NOT EXISTS trivia_template_questions (
+const CREATE_TRIVIA_QUESTIONS = `
+CREATE TABLE IF NOT EXISTS trivia_questions (
   id            INT           NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  template_id   INT           NOT NULL,
   question_type VARCHAR(50)   NOT NULL,
   config        JSON          NOT NULL,
   position      SMALLINT      NOT NULL DEFAULT 0,
   created_at    TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at    TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-  INDEX idx_ttq_template (template_id),
-  INDEX idx_ttq_type (question_type)
+  INDEX idx_tq_type (question_type),
+  INDEX idx_tq_position (position)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 `;
 
@@ -313,8 +303,7 @@ const TABLES = [
 	CREATE_USER_COLLECTIONS,
 	CREATE_RARITIES,
 	CREATE_USER_COLLECTION_ITEMS,
-	CREATE_TRIVIA_TEMPLATES,
-	CREATE_TRIVIA_TEMPLATE_QUESTIONS,
+	CREATE_TRIVIA_QUESTIONS,
 	CREATE_PAIR_GAME_RESULTS,
 	CREATE_TRIVIA_GAME_RESULTS
 ];
@@ -449,6 +438,34 @@ async function migrateRarities(): Promise<void> {
 	}
 }
 
+async function migrateTriviaToFlat(): Promise<void> {
+	// If the old trivia_template_questions table exists (has template_id column),
+	// migrate its data to the new flat trivia_questions table, then drop old tables.
+	if (!(await columnExists('trivia_template_questions', 'template_id'))) return;
+
+	const [existing] = await query<(RowDataPacket & { cnt: number })[]>(
+		'SELECT COUNT(*) AS cnt FROM trivia_questions'
+	);
+	if (existing[0].cnt > 0) {
+		// Already migrated, just drop old tables
+		await execute('DROP TABLE IF EXISTS trivia_template_questions');
+		await execute('DROP TABLE IF EXISTS trivia_templates');
+		return;
+	}
+
+	// Copy questions from old table to new flat table
+	await execute(`
+		INSERT INTO trivia_questions (question_type, config, position, created_at)
+		SELECT question_type, config, position, created_at
+		FROM trivia_template_questions
+		ORDER BY template_id, position
+	`);
+
+	// Drop old tables
+	await execute('DROP TABLE IF EXISTS trivia_template_questions');
+	await execute('DROP TABLE IF EXISTS trivia_templates');
+}
+
 export async function initializeSchema(): Promise<void> {
 	if (initialized) return;
 
@@ -467,6 +484,7 @@ export async function initializeSchema(): Promise<void> {
 
 	await migrateCollectionCreators();
 	await migrateRarities();
+	await migrateTriviaToFlat();
 
 	initialized = true;
 }

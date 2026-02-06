@@ -1,6 +1,5 @@
-import { json, error } from '@sveltejs/kit';
 import { initializeSchema } from '$lib/server/schema';
-import { findTemplateById, findTemplateQuestions } from '$lib/server/repositories/trivia.repository';
+import { findAllQuestions, findQuestionById } from '$lib/server/repositories/trivia.repository';
 import {
 	findCollectionById,
 	findCollectionItemsWithArtists,
@@ -12,7 +11,7 @@ import type {
 } from '$lib/server/repositories/collection.repository';
 import { TriviaQuestionType } from '$types/trivia.type';
 import type {
-	TriviaTemplateQuestionRow,
+	TriviaQuestionRow,
 	TriviaQuestionConfig,
 	GeneratedTriviaQuestion,
 	GeneratedTriviaSet,
@@ -32,13 +31,12 @@ import type {
 	WhatGenreForArtistConfig,
 	MostFollowedArtistConfig
 } from '$types/trivia.type';
-import type { RequestHandler } from './$types';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function shuffleArray<T>(arr: T[]): T[] {
+export function shuffleArray<T>(arr: T[]): T[] {
 	const a = [...arr];
 	for (let i = a.length - 1; i > 0; i--) {
 		const j = Math.floor(Math.random() * (i + 1));
@@ -55,10 +53,6 @@ function primaryArtist(item: CollectionItemWithArtists): string {
 	return (item.artists ?? '').split(',')[0].trim();
 }
 
-/**
- * Shuffle options and return { options, correctIndex } using object reference
- * tracking (safe even when labels are duplicated).
- */
 function shuffleWithCorrect(
 	opts: TriviaOption[],
 	correctIdx: number
@@ -68,10 +62,6 @@ function shuffleWithCorrect(
 	return { options: shuffled, correctIndex: shuffled.indexOf(correctRef) };
 }
 
-/**
- * Resolve the question-level image based on the showImage config.
- * Falls back to defaultImage when showImage is not set.
- */
 function resolveQuestionImage(
 	config: ImageDisplayConfig,
 	item: CollectionItemWithArtists | null,
@@ -82,9 +72,6 @@ function resolveQuestionImage(
 	return item.album_cover_url ?? null;
 }
 
-/**
- * Build lookup maps for resolving option images by label.
- */
 function buildImageLookups(
 	items: CollectionItemWithArtists[],
 	artistsMeta: CollectionArtistWithMetadata[] | null
@@ -119,10 +106,6 @@ function buildImageLookups(
 	return { albumMap, artistMap };
 }
 
-/**
- * Post-process generated questions to apply showOptionImages config.
- * Looks up images for each option label using the provided maps.
- */
 function applyOptionImages(
 	questions: GeneratedTriviaQuestion[],
 	config: ImageDisplayConfig,
@@ -185,7 +168,7 @@ function generateWhichCameFirst(
 		const { options, correctIndex } = shuffleWithCorrect(opts, correctIdx);
 
 		results.push({
-			templateQuestionId: questionId,
+			questionId,
 			questionType: TriviaQuestionType.WhichCameFirst,
 			questionText: `Which ${subject} came out first?`,
 			options,
@@ -222,7 +205,6 @@ function generateWhatYearReleased(
 			if (y >= 1900) yearSet.add(y);
 		}
 
-		// Build options with correct answer at index 0, then shuffle with tracking
 		const yearArr = [...yearSet];
 		const artist = primaryArtist(item);
 		const opts: TriviaOption[] = yearArr.map((y) => ({
@@ -236,7 +218,7 @@ function generateWhatYearReleased(
 		const name = subject === 'album' ? (item.album_name ?? item.track_name) : item.track_name;
 
 		results.push({
-			templateQuestionId: questionId,
+			questionId,
 			questionType: TriviaQuestionType.WhatYearReleased,
 			questionText: `What year was "${name}" released?`,
 			options,
@@ -273,7 +255,6 @@ function generateWhatAlbumForSong(
 			config.optionCount - 1
 		);
 
-		// Correct answer is always at index 0 before shuffle
 		const yearStr = item.album_release_year ? ` (${item.album_release_year})` : '';
 		const opts: TriviaOption[] = [correctAlbum, ...distractors].map((a, idx) => ({
 			label: a,
@@ -282,7 +263,7 @@ function generateWhatAlbumForSong(
 		const { options, correctIndex } = shuffleWithCorrect(opts, 0);
 
 		results.push({
-			templateQuestionId: questionId,
+			questionId,
 			questionType: TriviaQuestionType.WhatAlbumForSong,
 			questionText: `What album was "${item.track_name}" on?`,
 			options,
@@ -330,7 +311,7 @@ function generateWhatArtistForTitle(
 		const yearSuffix = item.album_release_year ? ` in ${item.album_release_year}` : '';
 
 		results.push({
-			templateQuestionId: questionId,
+			questionId,
 			questionType: TriviaQuestionType.WhatArtistForTitle,
 			questionText: `What artist released "${name}"${yearSuffix}?`,
 			options,
@@ -347,7 +328,6 @@ function generateArtistFirstAlbum(
 	items: CollectionItemWithArtists[],
 	questionId: number
 ): GeneratedTriviaQuestion[] {
-	// Build artist -> distinct albums with years
 	const artistAlbums = new Map<string, Map<string, string>>();
 	for (const item of items) {
 		if (!item.album_name || !item.album_release_year) continue;
@@ -357,7 +337,6 @@ function generateArtistFirstAlbum(
 		artistAlbums.get(artist)!.set(item.album_name, item.album_release_year);
 	}
 
-	// Filter to artists with enough distinct albums
 	const eligible = [...artistAlbums.entries()].filter(
 		([, albums]) => albums.size >= config.optionCount
 	);
@@ -378,7 +357,6 @@ function generateArtistFirstAlbum(
 		const correct = albums[0];
 		const selected = [correct, ...pickRandom(albums.slice(1), config.optionCount - 1)];
 
-		// Correct answer is at index 0 before shuffle
 		const opts: TriviaOption[] = selected.map((a) => ({
 			label: a.name,
 			meta: a.year,
@@ -386,11 +364,10 @@ function generateArtistFirstAlbum(
 		}));
 		const { options, correctIndex } = shuffleWithCorrect(opts, 0);
 
-		// Find an item for this artist to get image URLs
 		const artistItem = items.find((i) => primaryArtist(i) === artistName) ?? null;
 
 		results.push({
-			templateQuestionId: questionId,
+			questionId,
 			questionType: TriviaQuestionType.ArtistFirstAlbum,
 			questionText: `Which was ${artistName}'s first album?`,
 			options,
@@ -420,7 +397,6 @@ function generateWhoSangLyrics(
 		const item = pickRandom(withLyrics, 1)[0];
 		if (usedIds.has(item.id)) continue;
 
-		// Pick a whole paragraph (verse/chorus) from the lyrics
 		const paragraphs = item
 			.lyrics!.split(/\n\s*\n/)
 			.map((p) =>
@@ -450,7 +426,7 @@ function generateWhoSangLyrics(
 		const { options, correctIndex } = shuffleWithCorrect(opts, 0);
 
 		results.push({
-			templateQuestionId: questionId,
+			questionId,
 			questionType: TriviaQuestionType.WhoSangLyrics,
 			questionText: `Who sang: "${fragment}"?`,
 			options,
@@ -501,7 +477,7 @@ function generateWhatLabelReleasedIt(
 			subject === 'album' ? (item.album_name ?? item.track_name) : item.track_name;
 
 		results.push({
-			templateQuestionId: questionId,
+			questionId,
 			questionType: TriviaQuestionType.WhatLabelReleasedIt,
 			questionText: `What record label released "${name}"?`,
 			options,
@@ -571,7 +547,7 @@ function generateFinishTheLyric(
 		const { options, correctIndex } = shuffleWithCorrect(opts, 0);
 
 		results.push({
-			templateQuestionId: questionId,
+			questionId,
 			questionType: TriviaQuestionType.FinishTheLyric,
 			questionText: `Finish the lyric: "${pair.firstLine}..."`,
 			options,
@@ -630,7 +606,7 @@ function generateWhatSongFromLyrics(
 		const { options, correctIndex } = shuffleWithCorrect(opts, 0);
 
 		results.push({
-			templateQuestionId: questionId,
+			questionId,
 			questionType: TriviaQuestionType.WhatSongFromLyrics,
 			questionText: `Which song contains: "${fragment}"?`,
 			options,
@@ -674,7 +650,7 @@ function generateNameTheAlbumFromCover(
 		const { options, correctIndex } = shuffleWithCorrect(opts, 0);
 
 		results.push({
-			templateQuestionId: questionId,
+			questionId,
 			questionType: TriviaQuestionType.NameTheAlbumFromCover,
 			questionText: 'What album is this?',
 			options,
@@ -731,7 +707,7 @@ function generateOddOneOut(
 		const { options, correctIndex } = shuffleWithCorrect(opts, 3);
 
 		results.push({
-			templateQuestionId: questionId,
+			questionId,
 			questionType: TriviaQuestionType.OddOneOut,
 			questionText: 'Which song is from a different album than the others?',
 			options,
@@ -779,7 +755,7 @@ function generateWhatGenreForArtist(
 		const questionImage = config.showImage === 'album' ? null : (config.showImage === 'artist' ? defaultImg : defaultImg);
 
 		results.push({
-			templateQuestionId: questionId,
+			questionId,
 			questionType: TriviaQuestionType.WhatGenreForArtist,
 			questionText: `What genre is ${artist.name} associated with?`,
 			options,
@@ -831,7 +807,7 @@ function generateMostFollowedArtist(
 		const mostFollowedImg = config.showImage === 'artist' ? (correctArtist.image_url ?? null) : null;
 
 		results.push({
-			templateQuestionId: questionId,
+			questionId,
 			questionType: TriviaQuestionType.MostFollowedArtist,
 			questionText: 'Which of these artists has the most Spotify followers?',
 			options,
@@ -848,7 +824,7 @@ function generateMostFollowedArtist(
 // ---------------------------------------------------------------------------
 
 function generateForQuestion(
-	question: TriviaTemplateQuestionRow,
+	question: TriviaQuestionRow,
 	items: CollectionItemWithArtists[],
 	artistsMeta: CollectionArtistWithMetadata[] | null,
 	albumMap: Map<string, string>,
@@ -953,93 +929,65 @@ function generateForQuestion(
 			results = [];
 	}
 
-	// Apply option images post-processing
 	return applyOptionImages(results, config, albumMap, artistMap);
 }
 
 // ---------------------------------------------------------------------------
-// Endpoint
+// Public API
 // ---------------------------------------------------------------------------
 
-export const POST: RequestHandler = async ({ params, request }) => {
-	const templateId = Number(params.id);
-	if (!Number.isFinite(templateId) || templateId <= 0) {
-		return error(400, 'Invalid template ID');
+export async function generateTriviaQuestions(
+	collectionId: number,
+	questionId?: number
+): Promise<GeneratedTriviaSet> {
+	await initializeSchema();
+
+	const collection = await findCollectionById(collectionId);
+	if (!collection) {
+		throw new Error('Collection not found');
 	}
 
-	let body: unknown;
-	try {
-		body = await request.json();
-	} catch {
-		return error(400, 'Invalid JSON body');
+	let questions: TriviaQuestionRow[];
+	if (questionId != null) {
+		const single = await findQuestionById(questionId);
+		if (!single) throw new Error('Question not found');
+		questions = [single];
+	} else {
+		questions = await findAllQuestions();
 	}
 
-	const { collectionId, questionId } = body as { collectionId?: unknown; questionId?: unknown };
-	const colId = Number(collectionId);
-	if (!Number.isFinite(colId) || colId <= 0) {
-		return error(400, 'Missing or invalid collectionId');
+	if (questions.length === 0) {
+		throw new Error('No trivia questions configured');
 	}
-	const filterQuestionId = questionId != null ? Number(questionId) : null;
 
-	try {
-		await initializeSchema();
+	const items = await findCollectionItemsWithArtists(collectionId);
 
-		const template = await findTemplateById(templateId);
-		if (!template) {
-			return error(404, 'Template not found');
-		}
+	const needsArtistMeta = questions.some(
+		(q) =>
+			q.question_type === TriviaQuestionType.WhatGenreForArtist ||
+			q.question_type === TriviaQuestionType.MostFollowedArtist
+	);
+	const artistsMeta = needsArtistMeta
+		? await findCollectionArtistsWithMetadata(collectionId)
+		: null;
 
-		const collection = await findCollectionById(colId);
-		if (!collection) {
-			return error(404, 'Collection not found');
-		}
+	const { albumMap, artistMap } = buildImageLookups(items, artistsMeta);
 
-		let questions = await findTemplateQuestions(templateId);
-		if (filterQuestionId != null) {
-			questions = questions.filter((q) => q.id === filterQuestionId);
-			if (questions.length === 0) {
-				return error(404, 'Question not found in this template');
-			}
-		}
-		const items = await findCollectionItemsWithArtists(colId);
+	let totalExpected = 0;
+	const generated: GeneratedTriviaQuestion[] = [];
 
-		// Lazily fetch artist metadata only if needed by genre/follower question types
-		const needsArtistMeta = questions.some(
-			(q) =>
-				q.question_type === TriviaQuestionType.WhatGenreForArtist ||
-				q.question_type === TriviaQuestionType.MostFollowedArtist
-		);
-		const artistsMeta = needsArtistMeta
-			? await findCollectionArtistsWithMetadata(colId)
-			: null;
-
-		// Build image lookup maps for option image post-processing
-		const { albumMap, artistMap } = buildImageLookups(items, artistsMeta);
-
-		let totalExpected = 0;
-		const generated: GeneratedTriviaQuestion[] = [];
-
-		for (const question of questions) {
-			const config = question.config as { count?: number };
-			totalExpected += config.count ?? 1;
-			const results = generateForQuestion(question, items, artistsMeta, albumMap, artistMap);
-			generated.push(...results);
-		}
-
-		const trivia: GeneratedTriviaSet = {
-			templateId: template.id,
-			templateName: template.name,
-			collectionId: collection.id,
-			collectionName: collection.name,
-			questions: generated,
-			skippedCount: totalExpected - generated.length,
-			generatedAt: new Date().toISOString()
-		};
-
-		return json({ trivia });
-	} catch (err) {
-		console.error('Failed to generate trivia:', err);
-		const message = err instanceof Error ? err.message : 'Unknown error';
-		return error(500, `Failed to generate trivia: ${message}`);
+	for (const question of questions) {
+		const config = question.config as { count?: number };
+		totalExpected += config.count ?? 1;
+		const results = generateForQuestion(question, items, artistsMeta, albumMap, artistMap);
+		generated.push(...results);
 	}
-};
+
+	return {
+		collectionId: collection.id,
+		collectionName: collection.name,
+		questions: generated,
+		skippedCount: totalExpected - generated.length,
+		generatedAt: new Date().toISOString()
+	};
+}

@@ -1,39 +1,15 @@
 import type { Handle } from '@sveltejs/kit';
-import { env } from '$env/dynamic/private';
 import { initializeSchema } from '$lib/server/schema';
+import { refreshUserToken } from '$lib/server/spotify-token';
 import '$services/i18n';
-import { findSession } from '$lib/server/repositories/session.repository';
-import { findUserBySpotifyId, updateUserTokens } from '$lib/server/repositories/user.repository';
+import { createSession, findSession } from '$lib/server/repositories/session.repository';
+import {
+	createAnonymousUser,
+	findUserBySpotifyId,
+	updateUserTokens
+} from '$lib/server/repositories/user.repository';
 
 let schemaInitialized = false;
-
-async function refreshSpotifyToken(
-	refreshToken: string
-): Promise<{ accessToken: string; refreshToken: string; expiresAt: number } | null> {
-	const clientId = env.SPOTIFY_CLIENT_ID;
-	const clientSecret = env.SPOTIFY_CLIENT_SECRET;
-	if (!clientId || !clientSecret) return null;
-
-	const response = await fetch('https://accounts.spotify.com/api/token', {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-		body: new URLSearchParams({
-			client_id: clientId,
-			client_secret: clientSecret,
-			grant_type: 'refresh_token',
-			refresh_token: refreshToken
-		})
-	});
-
-	if (!response.ok) return null;
-
-	const data = await response.json();
-	return {
-		accessToken: data.access_token,
-		refreshToken: data.refresh_token || refreshToken,
-		expiresAt: Date.now() + data.expires_in * 1000
-	};
-}
 
 export const handle: Handle = async ({ event, resolve }) => {
 	// Initialize DB schema once
@@ -52,22 +28,27 @@ export const handle: Handle = async ({ event, resolve }) => {
 		if (session) {
 			const user = await findUserBySpotifyId(session.user_spotify_id);
 			if (user) {
+				const isAnonymous = user.spotify_id.startsWith('anon-');
+
 				event.locals.user = {
 					spotifyId: user.spotify_id,
 					displayName: user.display_name,
 					email: user.email,
-					avatarUrl: user.avatar_url
+					avatarUrl: user.avatar_url,
+					isAnonymous
 				};
 
 				let accessToken = user.access_token;
 
-				// Refresh token if expired or about to expire (within 60s)
+				// Refresh Spotify token if expired or about to expire (within 60s)
+				// Only for Spotify-authenticated users (anon users have no tokens)
 				if (
+					!isAnonymous &&
 					user.token_expires_at &&
 					user.refresh_token &&
 					Date.now() >= user.token_expires_at - 60_000
 				) {
-					const refreshed = await refreshSpotifyToken(user.refresh_token);
+					const refreshed = await refreshUserToken(user.refresh_token);
 					if (refreshed) {
 						await updateUserTokens(
 							user.spotify_id,
@@ -82,6 +63,34 @@ export const handle: Handle = async ({ event, resolve }) => {
 				event.locals.accessToken = accessToken;
 			}
 		}
+	}
+
+	// Auto-create anonymous user for page navigations without a session
+	if (
+		!event.locals.user &&
+		!event.url.pathname.startsWith('/api/') &&
+		event.request.headers.get('accept')?.includes('text/html')
+	) {
+		const anonId = `anon-${crypto.randomUUID()}`;
+		await createAnonymousUser(anonId);
+		const newSessionId = await createSession(anonId);
+
+		event.cookies.set('session', newSessionId, {
+			path: '/',
+			httpOnly: true,
+			secure: event.url.protocol === 'https:',
+			sameSite: 'lax',
+			maxAge: 60 * 60 * 24 * 30
+		});
+
+		event.locals.user = {
+			spotifyId: anonId,
+			displayName: 'Anonymous Player',
+			email: null,
+			avatarUrl: null,
+			isAnonymous: true
+		};
+		event.locals.accessToken = null;
 	}
 
 	return resolve(event);

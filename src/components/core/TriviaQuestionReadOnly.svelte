@@ -4,19 +4,18 @@
 		TriviaQuestionType,
 		TRIVIA_QUESTION_TYPE_LABELS
 	} from '$types/trivia.type';
-	import type { TriviaTemplateQuestionRow, GeneratedTriviaQuestion } from '$types/trivia.type';
+	import type { TriviaQuestionRow, GeneratedTriviaQuestion } from '$types/trivia.type';
 
 	interface Props {
-		question: TriviaTemplateQuestionRow;
-		index: number;
+		question: TriviaQuestionRow;
 		generating: boolean;
-		generated: GeneratedTriviaQuestion | null;
+		generatedQuestions: GeneratedTriviaQuestion[];
 		collectionSelected: boolean;
 		ongenerate: () => void;
 		classes?: string;
 	}
 
-	let { question, index, generating, generated, collectionSelected, ongenerate, classes = '' }: Props = $props();
+	let { question, generating, generatedQuestions, collectionSelected, ongenerate, classes = '' }: Props = $props();
 
 	let config = $derived(question.config as unknown as Record<string, unknown>);
 
@@ -40,18 +39,16 @@
 
 <div class={classNames('rounded-lg bg-base-200 px-3 py-2', classes)}>
 	<div class="flex items-center gap-2">
-		<span class="text-base-content/40 text-xs font-bold">#{index + 1}</span>
 		<span class="text-sm font-medium">{TRIVIA_QUESTION_TYPE_LABELS[question.question_type]}</span>
-		<div class="flex flex-1 flex-wrap items-center gap-1">
-			<span class="badge badge-sm badge-ghost">{config.count} q</span>
+		<div class="text-base-content/40 flex flex-1 flex-wrap items-center gap-x-2 text-xs">
 			{#if hasSubject}
-				<span class="badge badge-sm badge-outline">{config.subject}</span>
+				<span>{config.subject}</span>
 			{/if}
 			{#if hasOptionCount}
-				<span class="badge badge-sm badge-ghost">{config.optionCount} opts</span>
+				<span>{config.optionCount} opts</span>
 			{/if}
 			{#if hasFragmentLength}
-				<span class="badge badge-sm badge-ghost">{config.fragmentLength} words</span>
+				<span>{config.fragmentLength}w</span>
 			{/if}
 		</div>
 		<button
@@ -66,25 +63,31 @@
 		</button>
 	</div>
 
-	{#if generated}
-		<div class="mt-2 rounded-md bg-base-300 p-3">
-			<p class="text-sm font-medium">{generated.questionText}</p>
-			<div class="mt-2 flex flex-col gap-1">
-				{#each generated.options as option, i}
-					<div class={classNames(
-						'flex items-center gap-3 rounded px-2 py-1 text-sm',
-						{
-							'bg-success/20 font-semibold': i === generated.correctIndex,
-							'bg-base-100': i !== generated.correctIndex
-						}
-					)}>
-						<span class="flex-1">{option.label}</span>
-						{#if option.verification}
-							<span class="text-base-content/50 text-xs">{option.verification}</span>
-						{/if}
+	{#if generatedQuestions.length > 0}
+		<div class="mt-2 flex flex-col gap-2">
+			{#each generatedQuestions as gq, qi (qi)}
+				<div class="rounded-md bg-base-300 p-3">
+					<p class="text-sm font-medium">{gq.questionText}</p>
+					<div class="mt-2 flex flex-col gap-1">
+						{#each gq.options as option, i}
+							<div class={classNames(
+								'flex items-center gap-3 rounded px-2 py-1 text-sm',
+								{
+									'bg-success/20 font-semibold': i === gq.correctIndex,
+									'bg-base-100': i !== gq.correctIndex
+								}
+							)}>
+								<span class="flex-1">{option.label}</span>
+								{#if option.verification}
+									<span class="text-base-content/50 text-xs">{option.verification}</span>
+								{/if}
+							</div>
+						{/each}
 					</div>
-				{/each}
-			</div>
+				</div>
+			{/each}
 		</div>
+	{:else if !collectionSelected}
+		<p class="text-base-content/30 mt-1 text-xs">Select a collection to preview questions</p>
 	{/if}
 </div>

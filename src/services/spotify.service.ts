@@ -159,6 +159,18 @@ class SpotifyService extends ObjectServiceClass<SpotifyAuth> {
 	async getArtist(artistId: string): Promise<SpotifyFullArtist | null> {
 		return this.fetchApi(`/artists/${artistId}`);
 	}
+
+	async searchPlaylists(
+		query: string,
+		limit: number = 20,
+		offset: number = 0
+	): Promise<SpotifyPaginatedResponse<SpotifyPlaylist> | null> {
+		const q = encodeURIComponent(query);
+		const response = await this.fetchApi<{ playlists: SpotifyPaginatedResponse<SpotifyPlaylist> }>(
+			`/search?q=${q}&type=playlist&limit=${limit}&offset=${offset}`
+		);
+		return response?.playlists ?? null;
+	}
 }
 
 export const spotifyService = new SpotifyService();

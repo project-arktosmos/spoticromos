@@ -242,11 +242,14 @@
 		<div class="flex flex-wrap items-center justify-between gap-2">
 			<div class="flex flex-wrap gap-3 text-sm">
 				<span class="font-semibold">{matchedPairs}/{totalPairs} pairs</span>
-				<span class={classNames(
-					errors >= maxErrors ? 'text-error font-semibold' : 'text-base-content/60'
-				)}>
-					{errors}/{maxErrors} errors
-				</span>
+				<div class="flex items-center gap-1">
+					{#each Array(maxErrors) as _, i}
+						<span class={classNames('text-xl transition-opacity duration-300', {
+							'text-error': i < maxErrors - errors,
+							'text-base-content/20': i >= maxErrors - errors
+						})}>&#9829;</span>
+					{/each}
+				</div>
 				<span class="text-base-content/60">{moves} moves</span>
 			</div>
 			<button class="btn btn-ghost btn-sm" onclick={startGame} disabled={gameWon || gameLost}>Restart</button>

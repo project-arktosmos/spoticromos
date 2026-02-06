@@ -87,6 +87,9 @@ importers:
       vite:
         specifier: ^7.0.4
         version: 7.3.1(@types/node@25.2.1)(jiti@2.6.1)(lightningcss@1.30.2)
+      vite-node:
+        specifier: ^5.3.0
+        version: 5.3.0(@types/node@25.2.1)(jiti@2.6.1)(lightningcss@1.30.2)
       vitest:
         specifier: ^4.0.6
         version: 4.0.18(@types/node@25.2.1)(@vitest/ui@4.0.18)(happy-dom@20.5.0)(jiti@2.6.1)(lightningcss@1.30.2)
@@ -969,6 +972,10 @@ packages:
     resolution: {integrity: sha512-gUDkDHSTv8/DJhomSIbO0fX/Dx0MO/sgllLxJyJfu4WixCQe9nfGJzmHm64ZCbxo+gUYQEsQcRmqcwcwPRwUkg==}
     hasBin: true
 
+  cac@6.7.14:
+    resolution: {integrity: sha512-b6Ilus+c3RrdDk+JhLKUAQfzzgLEPy6wcXqS7f/xe1EETvsDP6GORG7SFuOs6cID5YkqchW/LXZbX5bc8j7ZcQ==}
+    engines: {node: '>=8'}
+
   callsites@3.1.0:
     resolution: {integrity: sha512-P8BjAsXvZS+VIDUI11hHCQEv74YT67YUi5JJFNWIqL235sBmjX4+qx9Muvls5ivyNENctx46xQLQ3aTuE7ssaQ==}
     engines: {node: '>=6'}
@@ -1077,6 +1084,9 @@ packages:
 
   es-module-lexer@1.7.0:
     resolution: {integrity: sha512-jEQoCwk8hyb2AZziIOLhDqpm5+2ww5uIE6lkO/6jcOCusfk6LhMHpXXfBLXTZ7Ydyt0j4VoUQv6uGNYbdW+kBA==}
+
+  es-module-lexer@2.0.0:
+    resolution: {integrity: sha512-5POEcUuZybH7IdmGsD8wlf0AI55wMecM9rVBTI/qEAy2c1kTOm3DjFYjrBdI2K3BaJjJYfYFeRtM0t9ssnRuxw==}
 
   es5-ext@0.10.64:
     resolution: {integrity: sha512-p2snDhiLaXe6dahss1LddxqEm+SkuDvV8dnIQG0MWjyHpcMNfXKPE+/Cc0y+PhxJX3A4xGNeFCj5oc0BUh6deg==}
@@ -1788,6 +1798,11 @@ packages:
 
   uri-js@4.4.1:
     resolution: {integrity: sha512-7rKUyy33Q1yc98pQ1DAmLtwX109F7TIfWlW1Ydo8Wl1ii1SeHieeh0HHfPeL2fMXK6z0s8ecKs9frCuLJvndBg==}
+
+  vite-node@5.3.0:
+    resolution: {integrity: sha512-8f20COPYJujc3OKPX6OuyBy3ZIv2det4eRRU4GY1y2MjbeGSUmPjedxg1b72KnTagCofwvZ65ThzjxDW2AtQFQ==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    hasBin: true
 
   vite@7.3.1:
     resolution: {integrity: sha512-w+N7Hifpc3gRjZ63vYBXA56dvvRlNWRczTdmCBBa+CotUzAPf5b7YMdMR/8CQoeYE5LX3W4wj6RYTgonm1b9DA==}
@@ -2597,6 +2612,8 @@ snapshots:
 
   bwip-js@4.8.0: {}
 
+  cac@6.7.14: {}
+
   callsites@3.1.0: {}
 
   chai@6.2.2: {}
@@ -2679,6 +2696,8 @@ snapshots:
   entities@4.5.0: {}
 
   es-module-lexer@1.7.0: {}
+
+  es-module-lexer@2.0.0: {}
 
   es5-ext@0.10.64:
     dependencies:
@@ -3386,6 +3405,26 @@ snapshots:
   uri-js@4.4.1:
     dependencies:
       punycode: 2.3.1
+
+  vite-node@5.3.0(@types/node@25.2.1)(jiti@2.6.1)(lightningcss@1.30.2):
+    dependencies:
+      cac: 6.7.14
+      es-module-lexer: 2.0.0
+      obug: 2.1.1
+      pathe: 2.0.3
+      vite: 7.3.1(@types/node@25.2.1)(jiti@2.6.1)(lightningcss@1.30.2)
+    transitivePeerDependencies:
+      - '@types/node'
+      - jiti
+      - less
+      - lightningcss
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - terser
+      - tsx
+      - yaml
 
   vite@7.3.1(@types/node@25.2.1)(jiti@2.6.1)(lightningcss@1.30.2):
     dependencies:
