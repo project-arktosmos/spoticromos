@@ -13,9 +13,11 @@ import type {
 import { TriviaQuestionType } from '$types/trivia.type';
 import type {
 	TriviaTemplateQuestionRow,
+	TriviaQuestionConfig,
 	GeneratedTriviaQuestion,
 	GeneratedTriviaSet,
 	TriviaOption,
+	ImageDisplayConfig,
 	WhichCameFirstConfig,
 	WhatYearReleasedConfig,
 	WhatAlbumForSongConfig,
@@ -66,12 +68,86 @@ function shuffleWithCorrect(
 	return { options: shuffled, correctIndex: shuffled.indexOf(correctRef) };
 }
 
+/**
+ * Resolve the question-level image based on the showImage config.
+ * Falls back to defaultImage when showImage is not set.
+ */
+function resolveQuestionImage(
+	config: ImageDisplayConfig,
+	item: CollectionItemWithArtists | null,
+	defaultImage: string | null
+): string | null {
+	if (!config.showImage || !item) return defaultImage;
+	if (config.showImage === 'artist') return item.artist_image_url ?? null;
+	return item.album_cover_url ?? null;
+}
+
+/**
+ * Build lookup maps for resolving option images by label.
+ */
+function buildImageLookups(
+	items: CollectionItemWithArtists[],
+	artistsMeta: CollectionArtistWithMetadata[] | null
+): { albumMap: Map<string, string>; artistMap: Map<string, string> } {
+	const albumMap = new Map<string, string>();
+	const artistMap = new Map<string, string>();
+
+	for (const item of items) {
+		const artist = primaryArtist(item);
+		if (item.album_name && item.album_cover_url) {
+			albumMap.set(item.album_name, item.album_cover_url);
+		}
+		if (item.track_name && item.album_cover_url) {
+			albumMap.set(item.track_name, item.album_cover_url);
+		}
+		if (artist && item.artist_image_url) {
+			artistMap.set(artist, item.artist_image_url);
+		}
+		if (item.track_name && item.artist_image_url) {
+			artistMap.set(item.track_name, item.artist_image_url);
+		}
+	}
+
+	if (artistsMeta) {
+		for (const a of artistsMeta) {
+			if (a.image_url) {
+				artistMap.set(a.name, a.image_url);
+			}
+		}
+	}
+
+	return { albumMap, artistMap };
+}
+
+/**
+ * Post-process generated questions to apply showOptionImages config.
+ * Looks up images for each option label using the provided maps.
+ */
+function applyOptionImages(
+	questions: GeneratedTriviaQuestion[],
+	config: ImageDisplayConfig,
+	albumMap: Map<string, string>,
+	artistMap: Map<string, string>
+): GeneratedTriviaQuestion[] {
+	if (!config.showOptionImages) return questions;
+
+	const map = config.showOptionImages === 'album' ? albumMap : artistMap;
+
+	return questions.map((q) => ({
+		...q,
+		options: q.options.map((opt) => ({
+			...opt,
+			imageUrl: map.get(opt.label) ?? opt.imageUrl ?? null
+		}))
+	}));
+}
+
 // ---------------------------------------------------------------------------
 // Generators
 // ---------------------------------------------------------------------------
 
 function generateWhichCameFirst(
-	config: WhichCameFirstConfig,
+	config: WhichCameFirstConfig & ImageDisplayConfig,
 	items: CollectionItemWithArtists[],
 	questionId: number
 ): GeneratedTriviaQuestion[] {
@@ -114,7 +190,7 @@ function generateWhichCameFirst(
 			questionText: `Which ${subject} came out first?`,
 			options,
 			correctIndex,
-			imageUrl: null
+			imageUrl: resolveQuestionImage(config, correctItem, null)
 		});
 	}
 
@@ -122,7 +198,7 @@ function generateWhichCameFirst(
 }
 
 function generateWhatYearReleased(
-	config: WhatYearReleasedConfig,
+	config: WhatYearReleasedConfig & ImageDisplayConfig,
 	items: CollectionItemWithArtists[],
 	questionId: number
 ): GeneratedTriviaQuestion[] {
@@ -165,7 +241,7 @@ function generateWhatYearReleased(
 			questionText: `What year was "${name}" released?`,
 			options,
 			correctIndex,
-			imageUrl: item.album_cover_url
+			imageUrl: resolveQuestionImage(config, item, item.album_cover_url)
 		});
 	}
 
@@ -173,7 +249,7 @@ function generateWhatYearReleased(
 }
 
 function generateWhatAlbumForSong(
-	config: WhatAlbumForSongConfig,
+	config: WhatAlbumForSongConfig & ImageDisplayConfig,
 	items: CollectionItemWithArtists[],
 	questionId: number
 ): GeneratedTriviaQuestion[] {
@@ -211,7 +287,7 @@ function generateWhatAlbumForSong(
 			questionText: `What album was "${item.track_name}" on?`,
 			options,
 			correctIndex,
-			imageUrl: item.album_cover_url
+			imageUrl: resolveQuestionImage(config, item, item.album_cover_url)
 		});
 	}
 
@@ -219,7 +295,7 @@ function generateWhatAlbumForSong(
 }
 
 function generateWhatArtistForTitle(
-	config: WhatArtistForTitleConfig,
+	config: WhatArtistForTitleConfig & ImageDisplayConfig,
 	items: CollectionItemWithArtists[],
 	questionId: number
 ): GeneratedTriviaQuestion[] {
@@ -259,7 +335,7 @@ function generateWhatArtistForTitle(
 			questionText: `What artist released "${name}"${yearSuffix}?`,
 			options,
 			correctIndex,
-			imageUrl: item.album_cover_url
+			imageUrl: resolveQuestionImage(config, item, item.album_cover_url)
 		});
 	}
 
@@ -267,7 +343,7 @@ function generateWhatArtistForTitle(
 }
 
 function generateArtistFirstAlbum(
-	config: ArtistFirstAlbumConfig,
+	config: ArtistFirstAlbumConfig & ImageDisplayConfig,
 	items: CollectionItemWithArtists[],
 	questionId: number
 ): GeneratedTriviaQuestion[] {
@@ -310,13 +386,16 @@ function generateArtistFirstAlbum(
 		}));
 		const { options, correctIndex } = shuffleWithCorrect(opts, 0);
 
+		// Find an item for this artist to get image URLs
+		const artistItem = items.find((i) => primaryArtist(i) === artistName) ?? null;
+
 		results.push({
 			templateQuestionId: questionId,
 			questionType: TriviaQuestionType.ArtistFirstAlbum,
 			questionText: `Which was ${artistName}'s first album?`,
 			options,
 			correctIndex,
-			imageUrl: null
+			imageUrl: resolveQuestionImage(config, artistItem, null)
 		});
 	}
 
@@ -324,7 +403,7 @@ function generateArtistFirstAlbum(
 }
 
 function generateWhoSangLyrics(
-	config: WhoSangLyricsConfig,
+	config: WhoSangLyricsConfig & ImageDisplayConfig,
 	items: CollectionItemWithArtists[],
 	questionId: number
 ): GeneratedTriviaQuestion[] {
@@ -376,7 +455,7 @@ function generateWhoSangLyrics(
 			questionText: `Who sang: "${fragment}"?`,
 			options,
 			correctIndex,
-			imageUrl: item.album_cover_url
+			imageUrl: resolveQuestionImage(config, item, item.album_cover_url)
 		});
 	}
 
@@ -384,7 +463,7 @@ function generateWhoSangLyrics(
 }
 
 function generateWhatLabelReleasedIt(
-	config: WhatLabelReleasedItConfig,
+	config: WhatLabelReleasedItConfig & ImageDisplayConfig,
 	items: CollectionItemWithArtists[],
 	questionId: number
 ): GeneratedTriviaQuestion[] {
@@ -427,7 +506,7 @@ function generateWhatLabelReleasedIt(
 			questionText: `What record label released "${name}"?`,
 			options,
 			correctIndex,
-			imageUrl: item.album_cover_url
+			imageUrl: resolveQuestionImage(config, item, item.album_cover_url)
 		});
 	}
 
@@ -435,7 +514,7 @@ function generateWhatLabelReleasedIt(
 }
 
 function generateFinishTheLyric(
-	config: FinishTheLyricConfig,
+	config: FinishTheLyricConfig & ImageDisplayConfig,
 	items: CollectionItemWithArtists[],
 	questionId: number
 ): GeneratedTriviaQuestion[] {
@@ -497,7 +576,7 @@ function generateFinishTheLyric(
 			questionText: `Finish the lyric: "${pair.firstLine}..."`,
 			options,
 			correctIndex,
-			imageUrl: pair.item.album_cover_url
+			imageUrl: resolveQuestionImage(config, pair.item, pair.item.album_cover_url)
 		});
 	}
 
@@ -505,7 +584,7 @@ function generateFinishTheLyric(
 }
 
 function generateWhatSongFromLyrics(
-	config: WhatSongFromLyricsConfig,
+	config: WhatSongFromLyricsConfig & ImageDisplayConfig,
 	items: CollectionItemWithArtists[],
 	questionId: number
 ): GeneratedTriviaQuestion[] {
@@ -556,7 +635,7 @@ function generateWhatSongFromLyrics(
 			questionText: `Which song contains: "${fragment}"?`,
 			options,
 			correctIndex,
-			imageUrl: item.album_cover_url
+			imageUrl: resolveQuestionImage(config, item, item.album_cover_url)
 		});
 	}
 
@@ -564,7 +643,7 @@ function generateWhatSongFromLyrics(
 }
 
 function generateNameTheAlbumFromCover(
-	config: NameTheAlbumFromCoverConfig,
+	config: NameTheAlbumFromCoverConfig & ImageDisplayConfig,
 	items: CollectionItemWithArtists[],
 	questionId: number
 ): GeneratedTriviaQuestion[] {
@@ -600,7 +679,7 @@ function generateNameTheAlbumFromCover(
 			questionText: 'What album is this?',
 			options,
 			correctIndex,
-			imageUrl: item.album_cover_url
+			imageUrl: resolveQuestionImage(config, item, item.album_cover_url)
 		});
 	}
 
@@ -608,7 +687,7 @@ function generateNameTheAlbumFromCover(
 }
 
 function generateOddOneOut(
-	config: OddOneOutConfig,
+	config: OddOneOutConfig & ImageDisplayConfig,
 	items: CollectionItemWithArtists[],
 	questionId: number
 ): GeneratedTriviaQuestion[] {
@@ -657,7 +736,7 @@ function generateOddOneOut(
 			questionText: 'Which song is from a different album than the others?',
 			options,
 			correctIndex,
-			imageUrl: null
+			imageUrl: resolveQuestionImage(config, oddSong, null)
 		});
 	}
 
@@ -665,7 +744,7 @@ function generateOddOneOut(
 }
 
 function generateWhatGenreForArtist(
-	config: WhatGenreForArtistConfig,
+	config: WhatGenreForArtistConfig & ImageDisplayConfig,
 	artistsMeta: CollectionArtistWithMetadata[],
 	questionId: number
 ): GeneratedTriviaQuestion[] {
@@ -696,13 +775,16 @@ function generateWhatGenreForArtist(
 		}));
 		const { options, correctIndex } = shuffleWithCorrect(opts, 0);
 
+		const defaultImg = artist.image_url ?? null;
+		const questionImage = config.showImage === 'album' ? null : (config.showImage === 'artist' ? defaultImg : defaultImg);
+
 		results.push({
 			templateQuestionId: questionId,
 			questionType: TriviaQuestionType.WhatGenreForArtist,
 			questionText: `What genre is ${artist.name} associated with?`,
 			options,
 			correctIndex,
-			imageUrl: artist.image_url
+			imageUrl: questionImage
 		});
 	}
 
@@ -710,7 +792,7 @@ function generateWhatGenreForArtist(
 }
 
 function generateMostFollowedArtist(
-	config: MostFollowedArtistConfig,
+	config: MostFollowedArtistConfig & ImageDisplayConfig,
 	artistsMeta: CollectionArtistWithMetadata[],
 	questionId: number
 ): GeneratedTriviaQuestion[] {
@@ -746,13 +828,15 @@ function generateMostFollowedArtist(
 		const correctIdx = picked.indexOf(correctArtist);
 		const { options, correctIndex } = shuffleWithCorrect(opts, correctIdx);
 
+		const mostFollowedImg = config.showImage === 'artist' ? (correctArtist.image_url ?? null) : null;
+
 		results.push({
 			templateQuestionId: questionId,
 			questionType: TriviaQuestionType.MostFollowedArtist,
 			questionText: 'Which of these artists has the most Spotify followers?',
 			options,
 			correctIndex,
-			imageUrl: null
+			imageUrl: mostFollowedImg
 		});
 	}
 
@@ -766,90 +850,111 @@ function generateMostFollowedArtist(
 function generateForQuestion(
 	question: TriviaTemplateQuestionRow,
 	items: CollectionItemWithArtists[],
-	artistsMeta: CollectionArtistWithMetadata[] | null
+	artistsMeta: CollectionArtistWithMetadata[] | null,
+	albumMap: Map<string, string>,
+	artistMap: Map<string, string>
 ): GeneratedTriviaQuestion[] {
+	const config = question.config as TriviaQuestionConfig;
+	let results: GeneratedTriviaQuestion[];
+
 	switch (question.question_type) {
 		case TriviaQuestionType.WhichCameFirst:
-			return generateWhichCameFirst(
-				question.config as WhichCameFirstConfig,
+			results = generateWhichCameFirst(
+				config as WhichCameFirstConfig & ImageDisplayConfig,
 				items,
 				question.id
 			);
+			break;
 		case TriviaQuestionType.WhatYearReleased:
-			return generateWhatYearReleased(
-				question.config as WhatYearReleasedConfig,
+			results = generateWhatYearReleased(
+				config as WhatYearReleasedConfig & ImageDisplayConfig,
 				items,
 				question.id
 			);
+			break;
 		case TriviaQuestionType.WhatAlbumForSong:
-			return generateWhatAlbumForSong(
-				question.config as WhatAlbumForSongConfig,
+			results = generateWhatAlbumForSong(
+				config as WhatAlbumForSongConfig & ImageDisplayConfig,
 				items,
 				question.id
 			);
+			break;
 		case TriviaQuestionType.WhatArtistForTitle:
-			return generateWhatArtistForTitle(
-				question.config as WhatArtistForTitleConfig,
+			results = generateWhatArtistForTitle(
+				config as WhatArtistForTitleConfig & ImageDisplayConfig,
 				items,
 				question.id
 			);
+			break;
 		case TriviaQuestionType.ArtistFirstAlbum:
-			return generateArtistFirstAlbum(
-				question.config as ArtistFirstAlbumConfig,
+			results = generateArtistFirstAlbum(
+				config as ArtistFirstAlbumConfig & ImageDisplayConfig,
 				items,
 				question.id
 			);
+			break;
 		case TriviaQuestionType.WhoSangLyrics:
-			return generateWhoSangLyrics(
-				question.config as WhoSangLyricsConfig,
+			results = generateWhoSangLyrics(
+				config as WhoSangLyricsConfig & ImageDisplayConfig,
 				items,
 				question.id
 			);
+			break;
 		case TriviaQuestionType.WhatLabelReleasedIt:
-			return generateWhatLabelReleasedIt(
-				question.config as WhatLabelReleasedItConfig,
+			results = generateWhatLabelReleasedIt(
+				config as WhatLabelReleasedItConfig & ImageDisplayConfig,
 				items,
 				question.id
 			);
+			break;
 		case TriviaQuestionType.FinishTheLyric:
-			return generateFinishTheLyric(
-				question.config as FinishTheLyricConfig,
+			results = generateFinishTheLyric(
+				config as FinishTheLyricConfig & ImageDisplayConfig,
 				items,
 				question.id
 			);
+			break;
 		case TriviaQuestionType.WhatSongFromLyrics:
-			return generateWhatSongFromLyrics(
-				question.config as WhatSongFromLyricsConfig,
+			results = generateWhatSongFromLyrics(
+				config as WhatSongFromLyricsConfig & ImageDisplayConfig,
 				items,
 				question.id
 			);
+			break;
 		case TriviaQuestionType.NameTheAlbumFromCover:
-			return generateNameTheAlbumFromCover(
-				question.config as NameTheAlbumFromCoverConfig,
+			results = generateNameTheAlbumFromCover(
+				config as NameTheAlbumFromCoverConfig & ImageDisplayConfig,
 				items,
 				question.id
 			);
+			break;
 		case TriviaQuestionType.OddOneOut:
-			return generateOddOneOut(
-				question.config as OddOneOutConfig,
+			results = generateOddOneOut(
+				config as OddOneOutConfig & ImageDisplayConfig,
 				items,
 				question.id
 			);
+			break;
 		case TriviaQuestionType.WhatGenreForArtist:
-			return generateWhatGenreForArtist(
-				question.config as WhatGenreForArtistConfig,
+			results = generateWhatGenreForArtist(
+				config as WhatGenreForArtistConfig & ImageDisplayConfig,
 				artistsMeta ?? [],
 				question.id
 			);
+			break;
 		case TriviaQuestionType.MostFollowedArtist:
-			return generateMostFollowedArtist(
-				question.config as MostFollowedArtistConfig,
+			results = generateMostFollowedArtist(
+				config as MostFollowedArtistConfig & ImageDisplayConfig,
 				artistsMeta ?? [],
 				question.id
 			);
+			break;
 		default:
-			return [];
+			results = [];
 	}
+
+	// Apply option images post-processing
+	return applyOptionImages(results, config, albumMap, artistMap);
 }
 
 // ---------------------------------------------------------------------------
@@ -908,13 +1013,16 @@ export const POST: RequestHandler = async ({ params, request }) => {
 			? await findCollectionArtistsWithMetadata(colId)
 			: null;
 
+		// Build image lookup maps for option image post-processing
+		const { albumMap, artistMap } = buildImageLookups(items, artistsMeta);
+
 		let totalExpected = 0;
 		const generated: GeneratedTriviaQuestion[] = [];
 
 		for (const question of questions) {
 			const config = question.config as { count?: number };
 			totalExpected += config.count ?? 1;
-			const results = generateForQuestion(question, items, artistsMeta);
+			const results = generateForQuestion(question, items, artistsMeta, albumMap, artistMap);
 			generated.push(...results);
 		}
 

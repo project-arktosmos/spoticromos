@@ -5,6 +5,7 @@
 	import { spotifyService } from '$services/spotify.service';
 	import AppMenu from '$components/core/AppMenu.svelte';
 	import TopNavbar from '$components/core/TopNavbar.svelte';
+	import ThemeToggle from '$components/core/ThemeToggle.svelte';
 
 	let { data, children } = $props();
 
@@ -27,3 +28,4 @@
 		</main>
 	</div>
 </div>
+<ThemeToggle />

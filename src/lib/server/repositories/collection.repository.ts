@@ -98,6 +98,23 @@ export async function saveCollection(data: {
 	return rows[0].id;
 }
 
+export async function findCollectionsByIds(ids: number[]): Promise<(CollectionRow & { track_count: number })[]> {
+	if (ids.length === 0) return [];
+	const placeholders = ids.map(() => '?').join(', ');
+	const [rows] = await query<(CollectionDbRow & { track_count: number })[]>(
+		`SELECT c.*,
+		        u.display_name AS creator_display_name,
+		        u.avatar_url AS creator_avatar_url,
+		        (SELECT COUNT(*) FROM collection_items ci WHERE ci.collection_id = c.id) AS track_count
+		 FROM collections c
+		 LEFT JOIN users u ON u.spotify_id = c.spotify_owner_id
+		 WHERE c.id IN (${placeholders})
+		 ORDER BY c.created_at DESC`,
+		ids
+	);
+	return rows;
+}
+
 export async function findAllCollections(): Promise<(CollectionRow & { track_count: number })[]> {
 	const [rows] = await query<(CollectionDbRow & { track_count: number })[]>(
 		`SELECT c.*,

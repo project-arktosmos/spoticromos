@@ -107,7 +107,18 @@ export interface MostFollowedArtistConfig {
 	optionCount: number;
 }
 
-export type TriviaQuestionConfig =
+// ---------------------------------------------------------------------------
+// Image display config (common to all question types)
+// ---------------------------------------------------------------------------
+
+export interface ImageDisplayConfig {
+	/** Show an image for the question itself (album cover or artist photo) */
+	showImage?: 'artist' | 'album';
+	/** Show album/artist images on all answer options */
+	showOptionImages?: 'artist' | 'album';
+}
+
+export type TriviaQuestionConfig = (
 	| WhichCameFirstConfig
 	| WhatYearReleasedConfig
 	| WhatAlbumForSongConfig
@@ -120,7 +131,8 @@ export type TriviaQuestionConfig =
 	| NameTheAlbumFromCoverConfig
 	| OddOneOutConfig
 	| WhatGenreForArtistConfig
-	| MostFollowedArtistConfig;
+	| MostFollowedArtistConfig
+) & ImageDisplayConfig;
 
 // ---------------------------------------------------------------------------
 // Default configs per question type

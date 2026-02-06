@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/stores';
 	import type { CollectionRow, CollectionItemWithArtists } from '$lib/server/repositories/collection.repository';
 	import type { OwnedItemRarity } from '$lib/server/repositories/ownership.repository';
@@ -25,6 +25,35 @@
 	let showPairsModal = $state(false);
 	let showClaimModal = $state(false);
 	let unclaimedRewards = $state(0);
+
+	// Free claim state
+	const FREE_CLAIM_INTERVAL = 600; // 10 minutes in seconds
+	let lastFreeClaim = $state<string | null>(null);
+	let nowSeconds = $state(Math.floor(Date.now() / 1000));
+	let freeClaimLoading = $state(false);
+	let freeClaimTimer: ReturnType<typeof setInterval> | null = null;
+
+	let freeClaimable = $derived.by(() => {
+		if (!lastFreeClaim) return 1; // first free claim
+		const lastClaimSec = Math.floor(new Date(lastFreeClaim).getTime() / 1000);
+		const elapsed = nowSeconds - lastClaimSec;
+		return Math.max(0, Math.floor(elapsed / FREE_CLAIM_INTERVAL));
+	});
+
+	let freeClaimCountdown = $derived.by(() => {
+		if (!lastFreeClaim) return 0; // can claim now
+		const lastClaimSec = Math.floor(new Date(lastFreeClaim).getTime() / 1000);
+		const elapsed = nowSeconds - lastClaimSec;
+		const remainder = elapsed % FREE_CLAIM_INTERVAL;
+		return FREE_CLAIM_INTERVAL - remainder;
+	});
+
+	let countdownDisplay = $derived.by(() => {
+		const total = freeClaimCountdown;
+		const m = Math.floor(total / 60);
+		const s = total % 60;
+		return `${m}:${s.toString().padStart(2, '0')}`;
+	});
 
 	let modalItemId = $state<number | null>(null);
 	let modalItem = $derived(modalItemId !== null ? items.find(i => i.id === modalItemId) ?? null : null);
@@ -82,6 +111,7 @@
 		stuckItemIds = new Set(json.stuckItemIds ?? []);
 		allRarities = json.rarities ?? [];
 		unclaimedRewards = json.unclaimedRewards ?? 0;
+		lastFreeClaim = json.lastFreeClaim ?? null;
 		const rarityMap = new Map<number, OwnedItemRarity[]>();
 		for (const r of json.ownedItemRarities ?? []) {
 			const list = rarityMap.get(r.collection_item_id) ?? [];
@@ -117,7 +147,39 @@
 		} finally {
 			loading = false;
 		}
+
+		// Tick every second for the free claim countdown
+		freeClaimTimer = setInterval(() => {
+			nowSeconds = Math.floor(Date.now() / 1000);
+		}, 1000);
 	});
+
+	onDestroy(() => {
+		if (freeClaimTimer) clearInterval(freeClaimTimer);
+	});
+
+	async function claimFreeRewards() {
+		if (!data.user || !collection || freeClaimable < 1 || freeClaimLoading) return;
+		freeClaimLoading = true;
+		try {
+			const res = await fetch('/api/rewards/free-claim', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ collectionId: collection.id })
+			});
+			if (!res.ok) {
+				const err = await res.json().catch(() => ({}));
+				throw new Error(err.message ?? `HTTP ${res.status}`);
+			}
+			const result = await res.json();
+			lastFreeClaim = result.lastFreeClaim;
+			await refetchCollectionData();
+		} catch (err) {
+			console.error('Failed to claim free rewards:', err);
+		} finally {
+			freeClaimLoading = false;
+		}
+	}
 
 	async function toggleItemOwnership(itemId: number) {
 		if (!data.user || !collection) return;
@@ -248,10 +310,12 @@
 			{#if data.user && items.length > 0 && allRarities.length > 0}
 				<div class="flex flex-col justify-center gap-2">
 					{#each rarityProgress as rp}
-						<div class="flex flex-col items-center gap-1 rounded-lg border border-base-300 p-2">
-							<span class="text-xs font-semibold" style="color: {rp.color};">{rp.name}</span>
+						<div class="flex flex-col gap-1 rounded-lg p-2">
+							<div class="flex items-center justify-between">
+								<span class="text-xs font-semibold" style="color: {rp.color};">{rp.name}</span>
+								<span class="text-base-content/60 text-[10px]">{rp.owned}/{rp.total}</span>
+							</div>
 							<progress class="progress h-1.5 w-full" style="color: {rp.color};" value={rp.owned} max={rp.total}></progress>
-							<span class="text-base-content/60 text-[10px]">{rp.owned}/{rp.total}</span>
 						</div>
 					{/each}
 				</div>
@@ -266,6 +330,26 @@
 				<button class="btn btn-accent btn-sm" disabled={unclaimedRewards === 0} onclick={() => showClaimModal = true}>
 					Claim Rewards{unclaimedRewards > 0 ? ` (${unclaimedRewards})` : ''}
 				</button>
+				{#if data.user}
+					<button
+						class="btn btn-outline btn-accent btn-sm"
+						disabled={freeClaimable < 1 || freeClaimLoading}
+						onclick={claimFreeRewards}
+					>
+						{#if freeClaimLoading}
+							<span class="loading loading-spinner loading-xs"></span>
+						{:else}
+							Free Claim{freeClaimable > 0 ? ` (${freeClaimable})` : ''}
+						{/if}
+					</button>
+					<span class="text-base-content/60 text-center text-xs">
+						{#if freeClaimable > 0}
+							{freeClaimable} free reward{freeClaimable > 1 ? 's' : ''} ready
+						{:else}
+							Next free in {countdownDisplay}
+						{/if}
+					</span>
+				{/if}
 			</div>
 		</div>
 

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { TriviaQuestionType } from '$types/trivia.type';
-	import type { TriviaQuestionConfig } from '$types/trivia.type';
+	import type { TriviaQuestionConfig, ImageDisplayConfig } from '$types/trivia.type';
 
 	interface Props {
 		questionType: TriviaQuestionType;
@@ -13,6 +13,15 @@
 
 	function updateField(field: string, value: unknown) {
 		onchange({ ...config, [field]: value } as TriviaQuestionConfig);
+	}
+
+	function updateImageField(field: keyof ImageDisplayConfig, value: string) {
+		if (value === '') {
+			const { [field]: _, ...rest } = config as unknown as Record<string, unknown>;
+			onchange(rest as unknown as TriviaQuestionConfig);
+		} else {
+			updateField(field, value);
+		}
 	}
 
 	let hasOptionCount = $derived(
@@ -31,6 +40,8 @@
 		questionType === TriviaQuestionType.WhoSangLyrics ||
 		questionType === TriviaQuestionType.WhatSongFromLyrics
 	);
+
+	let imgConfig = $derived(config as ImageDisplayConfig);
 </script>
 
 <div class={classes}>
@@ -96,5 +107,35 @@
 				/>
 			</label>
 		{/if}
+
+		<label class="form-control w-32">
+			<div class="label">
+				<span class="label-text text-xs">Question image</span>
+			</div>
+			<select
+				value={imgConfig.showImage ?? ''}
+				onchange={(e) => updateImageField('showImage', (e.target as HTMLSelectElement).value)}
+				class="select select-bordered select-sm w-full"
+			>
+				<option value="">Default</option>
+				<option value="album">Album cover</option>
+				<option value="artist">Artist photo</option>
+			</select>
+		</label>
+
+		<label class="form-control w-32">
+			<div class="label">
+				<span class="label-text text-xs">Option images</span>
+			</div>
+			<select
+				value={imgConfig.showOptionImages ?? ''}
+				onchange={(e) => updateImageField('showOptionImages', (e.target as HTMLSelectElement).value)}
+				class="select select-bordered select-sm w-full"
+			>
+				<option value="">None</option>
+				<option value="album">Album covers</option>
+				<option value="artist">Artist photos</option>
+			</select>
+		</label>
 	</div>
 </div>

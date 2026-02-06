@@ -83,6 +83,90 @@ function pickWeightedRarity(rarities: RarityRow[]): RarityRow {
 	return rarities[0];
 }
 
+// ---------------------------------------------------------------------------
+// Free (time-based) reward claims
+// ---------------------------------------------------------------------------
+
+const FREE_CLAIM_INTERVAL_SECONDS = 600; // 10 minutes
+
+export async function claimFreeRewards(
+	userSpotifyId: string,
+	collectionId: number
+): Promise<{ claimed: number; lastFreeClaim: string }> {
+	const conn = await getPool().getConnection();
+	try {
+		await conn.beginTransaction();
+
+		// Use TIMESTAMPDIFF for elapsed calculation so MySQL handles timezones internally
+		const [rows] = await conn.query<
+			(RowDataPacket & { last_free_claim: Date | null; elapsed_seconds: number | null })[]
+		>(
+			`SELECT last_free_claim,
+			        TIMESTAMPDIFF(SECOND, last_free_claim, NOW()) AS elapsed_seconds
+			 FROM user_collections
+			 WHERE user_spotify_id = ? AND collection_id = ?
+			 FOR UPDATE`,
+			[userSpotifyId, collectionId]
+		);
+
+		if (rows.length === 0) {
+			await conn.rollback();
+			throw new Error('User does not own this collection');
+		}
+
+		const lastClaim = rows[0].last_free_claim;
+		const elapsedSeconds = rows[0].elapsed_seconds ?? 0;
+		let claimable: number;
+
+		if (!lastClaim) {
+			// First free claim ever — grant 1 and start the clock
+			claimable = 1;
+			await conn.execute(
+				`UPDATE user_collections
+				 SET unclaimed_rewards = unclaimed_rewards + 1,
+				     last_free_claim = NOW()
+				 WHERE user_spotify_id = ? AND collection_id = ?`,
+				[userSpotifyId, collectionId]
+			);
+		} else {
+			claimable = Math.floor(elapsedSeconds / FREE_CLAIM_INTERVAL_SECONDS);
+			if (claimable < 1) {
+				await conn.rollback();
+				throw new Error('No free claims available yet');
+			}
+			// Advance by exact intervals to preserve partial progress toward next claim
+			const advanceSeconds = claimable * FREE_CLAIM_INTERVAL_SECONDS;
+			await conn.execute(
+				`UPDATE user_collections
+				 SET unclaimed_rewards = unclaimed_rewards + ?,
+				     last_free_claim = DATE_ADD(last_free_claim, INTERVAL ? SECOND)
+				 WHERE user_spotify_id = ? AND collection_id = ?`,
+				[claimable, advanceSeconds, userSpotifyId, collectionId]
+			);
+		}
+
+		// Read back the updated timestamp so we return the canonical value
+		const [updated] = await conn.query<
+			(RowDataPacket & { last_free_claim: Date })[]
+		>(
+			`SELECT last_free_claim FROM user_collections
+			 WHERE user_spotify_id = ? AND collection_id = ?`,
+			[userSpotifyId, collectionId]
+		);
+
+		await conn.commit();
+		return {
+			claimed: claimable,
+			lastFreeClaim: new Date(updated[0].last_free_claim).toISOString()
+		};
+	} catch (err) {
+		await conn.rollback();
+		throw err;
+	} finally {
+		conn.release();
+	}
+}
+
 export async function claimRandomItem(
 	userSpotifyId: string,
 	collectionId: number

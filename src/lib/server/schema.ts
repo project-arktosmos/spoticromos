@@ -351,6 +351,11 @@ const MIGRATIONS: Array<{ table: string; column: string; sql: string }> = [
 		table: 'user_collection_items',
 		column: 'is_stuck',
 		sql: 'ALTER TABLE user_collection_items ADD COLUMN is_stuck BOOLEAN NOT NULL DEFAULT FALSE AFTER rarity_id'
+	},
+	{
+		table: 'user_collections',
+		column: 'last_free_claim',
+		sql: 'ALTER TABLE user_collections ADD COLUMN last_free_claim TIMESTAMP NULL DEFAULT NULL'
 	}
 ];
 

@@ -224,6 +224,13 @@
 						disabled={answered}
 						onclick={() => selectOption(i)}
 					>
+						{#if option.imageUrl}
+							<img
+								src={option.imageUrl}
+								alt=""
+								class="h-10 w-10 shrink-0 rounded object-cover"
+							/>
+						{/if}
 						<span class="flex-1">{option.label}</span>
 						{#if answered && option.verification}
 							<span class="text-xs opacity-70">{option.verification}</span>

@@ -64,6 +64,13 @@
 										)}
 									>
 										<span class="text-base-content/40 text-xs">{String.fromCharCode(65 + j)}.</span>
+										{#if option.imageUrl}
+											<img
+												src={option.imageUrl}
+												alt=""
+												class="h-8 w-8 shrink-0 rounded object-cover"
+											/>
+										{/if}
 										<span>{option.label}</span>
 										{#if option.meta}
 											<span class="text-base-content/40 ml-auto text-xs">({option.meta})</span>

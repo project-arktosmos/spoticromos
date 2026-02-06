@@ -21,7 +21,7 @@
 	<div class="flex-none gap-2">
 		{#if user}
 			<div class="flex items-center gap-3">
-				<span class="text-sm">{user.displayName}</span>
+				<a href="/profile" class="text-sm hover:underline">{user.displayName}</a>
 				{#if user.avatarUrl}
 					<div class="avatar">
 						<div class="w-8 rounded-full">
