@@ -283,6 +283,19 @@ CREATE TABLE IF NOT EXISTS pair_game_results (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 `;
 
+const CREATE_TRIVIA_GAME_RESULTS = `
+CREATE TABLE IF NOT EXISTS trivia_game_results (
+  id               INT           NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  user_spotify_id  VARCHAR(100)  NOT NULL,
+  collection_id    INT           NOT NULL,
+  score            SMALLINT      NOT NULL,
+  total_questions  SMALLINT      NOT NULL,
+  created_at       TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  INDEX idx_tgr_user_collection (user_spotify_id, collection_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+`;
+
 const TABLES = [
 	CREATE_ARTISTS,
 	CREATE_ALBUMS,
@@ -302,7 +315,8 @@ const TABLES = [
 	CREATE_USER_COLLECTION_ITEMS,
 	CREATE_TRIVIA_TEMPLATES,
 	CREATE_TRIVIA_TEMPLATE_QUESTIONS,
-	CREATE_PAIR_GAME_RESULTS
+	CREATE_PAIR_GAME_RESULTS,
+	CREATE_TRIVIA_GAME_RESULTS
 ];
 
 interface ColumnRow extends RowDataPacket {

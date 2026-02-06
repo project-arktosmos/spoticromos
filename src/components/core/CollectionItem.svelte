@@ -6,65 +6,105 @@
 	interface Props {
 		item: CollectionItemWithArtists;
 		owned?: boolean;
+		stuck?: boolean;
 		showToggle?: boolean;
 		onToggleOwnership?: () => void;
+		onToggleStick?: () => void;
+		onOpenDetail?: () => void;
+		showStickInHeader?: boolean;
 		classes?: string;
 		rarityColor?: string | null;
 		rarityName?: string | null;
 		rarityCounts?: OwnedItemRarity[];
 	}
 
-	let { item, owned = true, showToggle = false, onToggleOwnership, classes = '', rarityColor = null, rarityName = null, rarityCounts = [] }: Props = $props();
+	let { item, owned = true, stuck = false, showToggle = false, onToggleOwnership, onToggleStick, onOpenDetail, showStickInHeader = false, classes = '', rarityColor = null, rarityName = null, rarityCounts = [] }: Props = $props();
 
-	let borderStyle = $derived(
-		owned && rarityColor ? `border-color: ${rarityColor}` : ''
-	);
+	let cardStyle = $derived(() => {
+		const bg = rarityColor ? `background-color: ${rarityColor}20;` : '';
+		if (stuck && rarityColor) {
+			return `border-color: ${rarityColor}; box-shadow: 0 0 12px ${rarityColor}40; ${bg}`;
+		}
+		if (owned && !stuck && rarityColor) {
+			return `border-color: ${rarityColor}40; ${bg}`;
+		}
+		return bg;
+	});
 
 	let computedClasses = $derived(classNames(
-		'grid grid-cols-2 w-72 shrink-0 overflow-hidden rounded-lg border-2 bg-base-300 relative',
-		{ 'opacity-70': !owned, 'border-black': !rarityColor || !owned },
+		'grid grid-cols-2 w-full overflow-hidden rounded-lg border-2 relative transition-all duration-300',
+		{ 'bg-base-300': !rarityColor },
+		{
+			'opacity-50 border-base-content/20': !owned,
+			'opacity-80 border-dashed border-base-content/40': owned && !stuck,
+			'opacity-100 shadow-lg': owned && stuck,
+			'border-black': !rarityColor && owned && !stuck
+		},
 		classes
 	));
 
 	let imageClasses = $derived(classNames(
-		'aspect-square w-full object-cover',
-		{ 'grayscale': !owned }
+		'aspect-square w-full object-cover transition-all duration-300',
+		{
+			'grayscale opacity-60': !owned,
+			'grayscale-[50%] opacity-80': owned && !stuck
+		}
 	));
 </script>
 
-<div class={computedClasses} style={borderStyle}>
+<div class={computedClasses} style={cardStyle()}>
 	<!-- Row 1: Track name (colspan 2) -->
 	<div class="col-span-2 flex items-center justify-center p-2">
 		<h3 class="truncate text-center text-sm font-semibold">{item.track_name}</h3>
 	</div>
 
+	<!-- Rarity divider top -->
+	{#if rarityColor}
+		<div class="col-span-2 h-0.5" style="background-color: {rarityColor}"></div>
+	{/if}
+
 	<!-- Row 2: Album image | Artist image -->
-	<div>
-		{#if item.album_cover_url}
-			<img
-				src={item.album_cover_url}
-				alt={item.album_name ?? item.track_name}
-				class={imageClasses}
-			/>
-		{:else}
-			<div class="bg-base-300 flex aspect-square w-full items-center justify-center">
-				<span class="text-base-content/30 text-4xl">♫</span>
-			</div>
-		{/if}
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+	<div
+		class={classNames('col-span-2 grid grid-cols-2', { 'cursor-pointer': onToggleStick && owned })}
+		onclick={() => { if (onToggleStick && owned) onToggleStick(); }}
+	>
+		<div class="border-r-2" style={rarityColor ? `border-color: ${rarityColor};` : ''}>
+			{#if item.album_cover_url}
+				<img
+					src={item.album_cover_url}
+					alt={item.album_name ?? item.track_name}
+					class={imageClasses}
+				/>
+			{:else}
+				<div class="bg-base-300 flex aspect-square w-full items-center justify-center">
+					<span class="text-base-content/30 text-4xl">&#9835;</span>
+				</div>
+			{/if}
+		</div>
+		<div class="flex aspect-square w-full items-center justify-center overflow-hidden p-3">
+			{#if item.artist_image_url}
+				<img
+					src={item.artist_image_url}
+					alt={item.artists ?? ''}
+					class={classNames(imageClasses, 'rounded-full border-2 object-cover')}
+					style={rarityColor ? `border-color: ${rarityColor};` : ''}
+				/>
+			{:else}
+				<div
+					class="bg-base-300 flex aspect-square w-full items-center justify-center rounded-full border-2"
+					style={rarityColor ? `border-color: ${rarityColor};` : ''}
+				>
+					<span class="text-base-content/30 text-3xl">&#9834;</span>
+				</div>
+			{/if}
+		</div>
 	</div>
-	<div>
-		{#if item.artist_image_url}
-			<img
-				src={item.artist_image_url}
-				alt={item.artists ?? ''}
-				class={imageClasses}
-			/>
-		{:else}
-			<div class="bg-base-300 flex aspect-square w-full items-center justify-center">
-				<span class="text-base-content/30 text-3xl">♪</span>
-			</div>
-		{/if}
-	</div>
+
+	<!-- Rarity divider bottom -->
+	{#if rarityColor}
+		<div class="col-span-2 h-0.5" style="background-color: {rarityColor}"></div>
+	{/if}
 
 	<!-- Row 3: Album | Artist -->
 	<div class="flex items-center justify-center p-2">
@@ -78,25 +118,45 @@
 		<div class="absolute top-1 left-1 flex flex-col gap-0.5">
 			{#each rarityCounts as rc}
 				<span
-					class="rounded px-1 py-0.5 text-[10px] font-bold leading-none text-white shadow"
+					class={classNames(
+						'rounded px-1 py-0.5 text-[10px] font-bold leading-none text-white shadow',
+						{ 'ring-2 ring-white ring-offset-1': rc.is_stuck }
+					)}
 					style="background-color: {rc.rarity_color}"
 				>
 					{rc.copy_count}x {rc.rarity_name}
+					{#if rc.is_stuck}
+						<span class="ml-0.5">&#9733;</span>
+					{/if}
 				</span>
 			{/each}
 		</div>
 	{/if}
 
-	{#if showToggle}
+	{#if onOpenDetail}
 		<button
-			class={classNames(
-				'btn btn-circle btn-xs absolute top-1 right-1',
-				{ 'btn-primary': owned, 'btn-ghost': !owned }
-			)}
-			onclick={onToggleOwnership}
-			title={owned ? 'Remove from owned' : 'Add to owned'}
+			class="btn btn-circle btn-xs btn-ghost absolute top-1 right-1"
+			onclick={onOpenDetail}
+			title="View details"
 		>
-			{owned ? '✓' : '+'}
+			<i class="fa-solid fa-arrow-up text-[10px]"></i>
 		</button>
+	{/if}
+
+	{#if showToggle}
+		<div class="absolute top-1 right-1 flex flex-col gap-1"
+			class:top-7={!!onOpenDetail}
+		>
+			<button
+				class={classNames(
+					'btn btn-circle btn-xs',
+					{ 'btn-primary btn-outline': owned, 'btn-ghost': !owned }
+				)}
+				onclick={onToggleOwnership}
+				title={owned ? 'Remove from owned' : 'Add to owned'}
+			>
+				{#if owned}&#10003;{:else}+{/if}
+			</button>
+		</div>
 	{/if}
 </div>

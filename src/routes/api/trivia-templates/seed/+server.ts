@@ -23,7 +23,7 @@ export const POST: RequestHandler = async () => {
 		const templateId = await createTemplate({
 			name: 'Complete Music Trivia',
 			description:
-				'Default template covering all 6 question types: chronology, release years, albums, artists, discography, and lyrics.'
+				'Default template covering all 13 question types: chronology, release years, albums, artists, discography, lyrics, labels, covers, genres, and more.'
 		});
 
 		const questionDefs = [
@@ -56,6 +56,41 @@ export const POST: RequestHandler = async () => {
 				question_type: TriviaQuestionType.WhoSangLyrics,
 				config: { ...DEFAULT_CONFIGS[TriviaQuestionType.WhoSangLyrics], count: 2 },
 				position: 5
+			},
+			{
+				question_type: TriviaQuestionType.WhatLabelReleasedIt,
+				config: { ...DEFAULT_CONFIGS[TriviaQuestionType.WhatLabelReleasedIt], count: 1 },
+				position: 6
+			},
+			{
+				question_type: TriviaQuestionType.FinishTheLyric,
+				config: { ...DEFAULT_CONFIGS[TriviaQuestionType.FinishTheLyric], count: 2 },
+				position: 7
+			},
+			{
+				question_type: TriviaQuestionType.WhatSongFromLyrics,
+				config: { ...DEFAULT_CONFIGS[TriviaQuestionType.WhatSongFromLyrics], count: 1 },
+				position: 8
+			},
+			{
+				question_type: TriviaQuestionType.NameTheAlbumFromCover,
+				config: { ...DEFAULT_CONFIGS[TriviaQuestionType.NameTheAlbumFromCover], count: 2 },
+				position: 9
+			},
+			{
+				question_type: TriviaQuestionType.OddOneOut,
+				config: { ...DEFAULT_CONFIGS[TriviaQuestionType.OddOneOut], count: 1 },
+				position: 10
+			},
+			{
+				question_type: TriviaQuestionType.WhatGenreForArtist,
+				config: { ...DEFAULT_CONFIGS[TriviaQuestionType.WhatGenreForArtist], count: 1 },
+				position: 11
+			},
+			{
+				question_type: TriviaQuestionType.MostFollowedArtist,
+				config: { ...DEFAULT_CONFIGS[TriviaQuestionType.MostFollowedArtist], count: 1 },
+				position: 12
 			}
 		];
 

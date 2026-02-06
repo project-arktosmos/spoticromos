@@ -32,8 +32,12 @@
 		"label": "Rarities"
 	},
 	{
+		"path": "/trivia",
+		"label": "Trivia Game"
+	},
+	{
 		"path": "/trivia-templates",
-		"label": "Trivia"
+		"label": "Trivia Templates"
 	},
 	{
 		"path": "/components",

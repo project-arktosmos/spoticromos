@@ -111,6 +111,45 @@ export async function findAllCollections(): Promise<(CollectionRow & { track_cou
 	return rows;
 }
 
+export interface PaginatedCollections {
+	collections: (CollectionRow & { track_count: number })[];
+	total: number;
+	page: number;
+	limit: number;
+}
+
+export async function findCollections(opts: {
+	page?: number;
+	limit?: number;
+	search?: string;
+}): Promise<PaginatedCollections> {
+	const page = Math.max(1, opts.page ?? 1);
+	const limit = Math.min(100, Math.max(1, opts.limit ?? 12));
+	const offset = (page - 1) * limit;
+	const searchPattern = opts.search?.trim() ? `%${opts.search.trim()}%` : '%';
+
+	const [countRows] = await query<(RowDataPacket & { total: number })[]>(
+		`SELECT COUNT(*) AS total FROM collections c WHERE c.name LIKE ?`,
+		[searchPattern]
+	);
+	const total = countRows[0].total;
+
+	const [rows] = await query<(CollectionDbRow & { track_count: number })[]>(
+		`SELECT c.*,
+		        u.display_name AS creator_display_name,
+		        u.avatar_url AS creator_avatar_url,
+		        (SELECT COUNT(*) FROM collection_items ci WHERE ci.collection_id = c.id) AS track_count
+		 FROM collections c
+		 LEFT JOIN users u ON u.spotify_id = c.spotify_owner_id
+		 WHERE c.name LIKE ?
+		 ORDER BY c.created_at DESC
+		 LIMIT ? OFFSET ?`,
+		[searchPattern, limit, offset]
+	);
+
+	return { collections: rows, total, page, limit };
+}
+
 export async function findCollectionById(id: number): Promise<CollectionRow | null> {
 	const [rows] = await query<CollectionDbRow[]>(
 		`SELECT c.*,
@@ -304,4 +343,49 @@ export async function findCollectionItemsWithArtists(
 		[collectionId]
 	);
 	return rows;
+}
+
+// ---------------------------------------------------------------------------
+// Artist metadata (for trivia generators that need genres/followers)
+// ---------------------------------------------------------------------------
+
+export interface CollectionArtistWithMetadata {
+	id: string;
+	name: string;
+	popularity: number | null;
+	followers: number | null;
+	genres: string[] | null;
+	image_url: string | null;
+}
+
+export async function findCollectionArtistsWithMetadata(
+	collectionId: number
+): Promise<CollectionArtistWithMetadata[]> {
+	const [rows] = await query<
+		(RowDataPacket & {
+			id: string;
+			name: string;
+			popularity: number | null;
+			followers: number | null;
+			genres: string | null;
+			image_url: string | null;
+		})[]
+	>(
+		`SELECT DISTINCT ca.id, ca.name, ca.popularity, ca.followers, ca.genres,
+		    (SELECT cai.url FROM collection_artist_images cai
+		     WHERE cai.artist_id = ca.id ORDER BY cai.height DESC LIMIT 1) AS image_url
+		 FROM collection_artists ca
+		 INNER JOIN collection_item_artists cia ON cia.artist_id = ca.id
+		 INNER JOIN collection_items ci ON ci.id = cia.item_id
+		 WHERE ci.collection_id = ?`,
+		[collectionId]
+	);
+	return rows.map((r) => ({
+		id: r.id,
+		name: r.name,
+		popularity: r.popularity,
+		followers: r.followers,
+		genres: r.genres ? (typeof r.genres === 'string' ? JSON.parse(r.genres) : r.genres) : null,
+		image_url: r.image_url
+	}));
 }

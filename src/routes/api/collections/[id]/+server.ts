@@ -10,6 +10,7 @@ import {
 	findStuckItemIds
 } from '$lib/server/repositories/ownership.repository';
 import type { OwnedItemRarity } from '$lib/server/repositories/ownership.repository';
+import { findAllRarities } from '$lib/server/repositories/rarity.repository';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ params, locals }) => {
@@ -37,7 +38,9 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 			stuckItemIds = await findStuckItemIds(locals.user.spotifyId, id);
 		}
 
-		return json({ collection, items, ownedItemIds, ownedItemRarities, stuckItemIds });
+		const rarities = await findAllRarities();
+
+		return json({ collection, items, ownedItemIds, ownedItemRarities, stuckItemIds, rarities });
 	} catch (err) {
 		console.error('Failed to fetch collection:', err);
 		const message = err instanceof Error ? err.message : 'Unknown error';

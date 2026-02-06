@@ -18,20 +18,23 @@
 
 	let { question, index, generating, generated, collectionSelected, ongenerate, classes = '' }: Props = $props();
 
-	let config = $derived(question.config as Record<string, unknown>);
+	let config = $derived(question.config as unknown as Record<string, unknown>);
 
 	let hasSubject = $derived(
 		question.question_type === TriviaQuestionType.WhichCameFirst ||
 		question.question_type === TriviaQuestionType.WhatYearReleased ||
-		question.question_type === TriviaQuestionType.WhatArtistForTitle
+		question.question_type === TriviaQuestionType.WhatArtistForTitle ||
+		question.question_type === TriviaQuestionType.WhatLabelReleasedIt
 	);
 
 	let hasOptionCount = $derived(
-		question.question_type !== TriviaQuestionType.WhatYearReleased
+		question.question_type !== TriviaQuestionType.WhatYearReleased &&
+		question.question_type !== TriviaQuestionType.OddOneOut
 	);
 
 	let hasFragmentLength = $derived(
-		question.question_type === TriviaQuestionType.WhoSangLyrics
+		question.question_type === TriviaQuestionType.WhoSangLyrics ||
+		question.question_type === TriviaQuestionType.WhatSongFromLyrics
 	);
 </script>
 

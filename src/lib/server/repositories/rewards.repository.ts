@@ -1,7 +1,8 @@
 import { query, execute, getPool } from '$lib/server/db';
 import type { RowDataPacket } from 'mysql2/promise';
 import type { CollectionItemWithArtists } from './collection.repository';
-import { findLowestRarity } from './rarity.repository';
+import type { RarityRow } from '$types/rarity.type';
+import { findAllRarities } from './rarity.repository';
 
 // ---------------------------------------------------------------------------
 // Row types
@@ -63,13 +64,32 @@ export async function addRewards(
 	}
 }
 
+/**
+ * Weighted rarity selection: each tier is ~3x rarer than the one below.
+ * weight = 3^(maxLevel - level)
+ *
+ * For default 5 tiers: Common 67%, Uncommon 22%, Rare 7.4%, Epic 2.5%, Legendary 0.8%
+ */
+function pickWeightedRarity(rarities: RarityRow[]): RarityRow {
+	const maxLevel = Math.max(...rarities.map((r) => r.level));
+	const weights = rarities.map((r) => Math.pow(3, maxLevel - r.level));
+	const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+
+	let roll = Math.random() * totalWeight;
+	for (let i = 0; i < rarities.length; i++) {
+		roll -= weights[i];
+		if (roll <= 0) return rarities[i];
+	}
+	return rarities[0];
+}
+
 export async function claimRandomItem(
 	userSpotifyId: string,
 	collectionId: number
 ): Promise<CollectionItemWithArtists | null> {
-	// Get the lowest rarity to assign to claimed items
-	const lowestRarity = await findLowestRarity();
-	if (!lowestRarity) throw new Error('No rarities configured');
+	const rarities = await findAllRarities();
+	if (!rarities.length) throw new Error('No rarities configured');
+	const selectedRarity = pickWeightedRarity(rarities);
 
 	const conn = await getPool().getConnection();
 	try {
@@ -123,7 +143,7 @@ export async function claimRandomItem(
 		await conn.execute(
 			`INSERT INTO user_collection_items (user_spotify_id, collection_item_id, rarity_id)
 			 VALUES (?, ?, ?)`,
-			[userSpotifyId, claimedItemId, lowestRarity.id]
+			[userSpotifyId, claimedItemId, selectedRarity.id]
 		);
 
 		await conn.commit();
@@ -150,10 +170,10 @@ export async function claimRandomItem(
 
 		// Attach the rarity we just assigned (avoids complex JOIN with multi-copy table)
 		const item = itemRows[0];
-		item.rarity_id = lowestRarity.id;
-		item.rarity_name = lowestRarity.name;
-		item.rarity_color = lowestRarity.color;
-		item.rarity_level = lowestRarity.level;
+		item.rarity_id = selectedRarity.id;
+		item.rarity_name = selectedRarity.name;
+		item.rarity_color = selectedRarity.color;
+		item.rarity_level = selectedRarity.level;
 
 		return item;
 	} catch (err) {

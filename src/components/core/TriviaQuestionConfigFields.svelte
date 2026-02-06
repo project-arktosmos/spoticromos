@@ -16,17 +16,20 @@
 	}
 
 	let hasOptionCount = $derived(
-		questionType !== TriviaQuestionType.WhatYearReleased
+		questionType !== TriviaQuestionType.WhatYearReleased &&
+		questionType !== TriviaQuestionType.OddOneOut
 	);
 
 	let hasSubject = $derived(
 		questionType === TriviaQuestionType.WhichCameFirst ||
 		questionType === TriviaQuestionType.WhatYearReleased ||
-		questionType === TriviaQuestionType.WhatArtistForTitle
+		questionType === TriviaQuestionType.WhatArtistForTitle ||
+		questionType === TriviaQuestionType.WhatLabelReleasedIt
 	);
 
 	let hasFragmentLength = $derived(
-		questionType === TriviaQuestionType.WhoSangLyrics
+		questionType === TriviaQuestionType.WhoSangLyrics ||
+		questionType === TriviaQuestionType.WhatSongFromLyrics
 	);
 </script>
 

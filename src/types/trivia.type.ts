@@ -8,7 +8,14 @@ export enum TriviaQuestionType {
 	WhatAlbumForSong = 'what_album_for_song',
 	WhatArtistForTitle = 'what_artist_for_title',
 	ArtistFirstAlbum = 'artist_first_album',
-	WhoSangLyrics = 'who_sang_lyrics'
+	WhoSangLyrics = 'who_sang_lyrics',
+	WhatLabelReleasedIt = 'what_label_released_it',
+	FinishTheLyric = 'finish_the_lyric',
+	WhatSongFromLyrics = 'what_song_from_lyrics',
+	NameTheAlbumFromCover = 'name_the_album_from_cover',
+	OddOneOut = 'odd_one_out',
+	WhatGenreForArtist = 'what_genre_for_artist',
+	MostFollowedArtist = 'most_followed_artist'
 }
 
 export const TRIVIA_QUESTION_TYPE_LABELS: Record<TriviaQuestionType, string> = {
@@ -17,7 +24,14 @@ export const TRIVIA_QUESTION_TYPE_LABELS: Record<TriviaQuestionType, string> = {
 	[TriviaQuestionType.WhatAlbumForSong]: 'What album was the song in?',
 	[TriviaQuestionType.WhatArtistForTitle]: 'What artist released it?',
 	[TriviaQuestionType.ArtistFirstAlbum]: "Which was the artist's first album?",
-	[TriviaQuestionType.WhoSangLyrics]: 'Who sang these lyrics?'
+	[TriviaQuestionType.WhoSangLyrics]: 'Who sang these lyrics?',
+	[TriviaQuestionType.WhatLabelReleasedIt]: 'What record label released it?',
+	[TriviaQuestionType.FinishTheLyric]: 'Finish the lyric',
+	[TriviaQuestionType.WhatSongFromLyrics]: 'Which song contains these lyrics?',
+	[TriviaQuestionType.NameTheAlbumFromCover]: 'Name the album from its cover',
+	[TriviaQuestionType.OddOneOut]: 'Which song is the odd one out?',
+	[TriviaQuestionType.WhatGenreForArtist]: 'What genre is the artist?',
+	[TriviaQuestionType.MostFollowedArtist]: 'Which artist has the most followers?'
 };
 
 // ---------------------------------------------------------------------------
@@ -57,13 +71,56 @@ export interface WhoSangLyricsConfig {
 	optionCount: number;
 }
 
+export interface WhatLabelReleasedItConfig {
+	count: number;
+	optionCount: number;
+	subject: 'song' | 'album';
+}
+
+export interface FinishTheLyricConfig {
+	count: number;
+	optionCount: number;
+}
+
+export interface WhatSongFromLyricsConfig {
+	count: number;
+	optionCount: number;
+	fragmentLength: number;
+}
+
+export interface NameTheAlbumFromCoverConfig {
+	count: number;
+	optionCount: number;
+}
+
+export interface OddOneOutConfig {
+	count: number;
+}
+
+export interface WhatGenreForArtistConfig {
+	count: number;
+	optionCount: number;
+}
+
+export interface MostFollowedArtistConfig {
+	count: number;
+	optionCount: number;
+}
+
 export type TriviaQuestionConfig =
 	| WhichCameFirstConfig
 	| WhatYearReleasedConfig
 	| WhatAlbumForSongConfig
 	| WhatArtistForTitleConfig
 	| ArtistFirstAlbumConfig
-	| WhoSangLyricsConfig;
+	| WhoSangLyricsConfig
+	| WhatLabelReleasedItConfig
+	| FinishTheLyricConfig
+	| WhatSongFromLyricsConfig
+	| NameTheAlbumFromCoverConfig
+	| OddOneOutConfig
+	| WhatGenreForArtistConfig
+	| MostFollowedArtistConfig;
 
 // ---------------------------------------------------------------------------
 // Default configs per question type
@@ -75,7 +132,14 @@ export const DEFAULT_CONFIGS: Record<TriviaQuestionType, TriviaQuestionConfig> =
 	[TriviaQuestionType.WhatAlbumForSong]: { count: 1, optionCount: 4 },
 	[TriviaQuestionType.WhatArtistForTitle]: { count: 1, subject: 'song', optionCount: 4 },
 	[TriviaQuestionType.ArtistFirstAlbum]: { count: 1, optionCount: 4 },
-	[TriviaQuestionType.WhoSangLyrics]: { count: 1, fragmentLength: 8, optionCount: 4 }
+	[TriviaQuestionType.WhoSangLyrics]: { count: 1, fragmentLength: 8, optionCount: 4 },
+	[TriviaQuestionType.WhatLabelReleasedIt]: { count: 1, optionCount: 4, subject: 'song' },
+	[TriviaQuestionType.FinishTheLyric]: { count: 1, optionCount: 4 },
+	[TriviaQuestionType.WhatSongFromLyrics]: { count: 1, optionCount: 4, fragmentLength: 8 },
+	[TriviaQuestionType.NameTheAlbumFromCover]: { count: 1, optionCount: 4 },
+	[TriviaQuestionType.OddOneOut]: { count: 1 },
+	[TriviaQuestionType.WhatGenreForArtist]: { count: 1, optionCount: 4 },
+	[TriviaQuestionType.MostFollowedArtist]: { count: 1, optionCount: 4 }
 };
 
 // ---------------------------------------------------------------------------

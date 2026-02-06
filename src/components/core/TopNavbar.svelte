@@ -10,7 +10,7 @@
 	let { user, classes = '' }: Props = $props();
 
 	let computedClasses = $derived(
-		classNames('navbar bg-base-100 shadow-sm px-4', classes)
+		classNames('navbar bg-base-300 shadow-md px-4', classes)
 	);
 </script>
 

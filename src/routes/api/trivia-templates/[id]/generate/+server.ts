@@ -3,9 +3,13 @@ import { initializeSchema } from '$lib/server/schema';
 import { findTemplateById, findTemplateQuestions } from '$lib/server/repositories/trivia.repository';
 import {
 	findCollectionById,
-	findCollectionItemsWithArtists
+	findCollectionItemsWithArtists,
+	findCollectionArtistsWithMetadata
 } from '$lib/server/repositories/collection.repository';
-import type { CollectionItemWithArtists } from '$lib/server/repositories/collection.repository';
+import type {
+	CollectionItemWithArtists,
+	CollectionArtistWithMetadata
+} from '$lib/server/repositories/collection.repository';
 import { TriviaQuestionType } from '$types/trivia.type';
 import type {
 	TriviaTemplateQuestionRow,
@@ -17,7 +21,14 @@ import type {
 	WhatAlbumForSongConfig,
 	WhatArtistForTitleConfig,
 	ArtistFirstAlbumConfig,
-	WhoSangLyricsConfig
+	WhoSangLyricsConfig,
+	WhatLabelReleasedItConfig,
+	FinishTheLyricConfig,
+	WhatSongFromLyricsConfig,
+	NameTheAlbumFromCoverConfig,
+	OddOneOutConfig,
+	WhatGenreForArtistConfig,
+	MostFollowedArtistConfig
 } from '$types/trivia.type';
 import type { RequestHandler } from './$types';
 
@@ -86,7 +97,9 @@ function generateWhichCameFirst(
 
 		const subject = config.subject === 'album' ? 'album' : 'song';
 		const opts: TriviaOption[] = picked.map((item) => ({
-			label: subject === 'album' ? (item.album_name ?? item.track_name) : item.track_name,
+			label: subject === 'album'
+				? (item.album_name ?? item.track_name)
+				: `${item.track_name} by ${primaryArtist(item)}`,
 			meta: item.album_release_year ?? undefined,
 			imageUrl: item.album_cover_url,
 			verification: `Released in ${item.album_release_year}`
@@ -328,20 +341,21 @@ function generateWhoSangLyrics(
 		const item = pickRandom(withLyrics, 1)[0];
 		if (usedIds.has(item.id)) continue;
 
-		// Extract lyrics fragment
-		const lines = item
-			.lyrics!.split('\n')
-			.map((l) => l.trim())
-			.filter((l) => l.length > 0 && !l.startsWith('['));
-		if (lines.length === 0) continue;
+		// Pick a whole paragraph (verse/chorus) from the lyrics
+		const paragraphs = item
+			.lyrics!.split(/\n\s*\n/)
+			.map((p) =>
+				p.split('\n')
+					.map((l) => l.trim())
+					.filter((l) => l.length > 0 && !l.startsWith('['))
+					.join(' / ')
+			)
+			.filter((p) => p.length >= 10);
+		if (paragraphs.length === 0) continue;
 
-		const words = lines.join(' ').split(/\s+/);
-		if (words.length < config.fragmentLength) continue;
+		const fragment = paragraphs[Math.floor(Math.random() * paragraphs.length)];
 
-		const startIdx = Math.floor(Math.random() * (words.length - config.fragmentLength));
-		const fragment = words.slice(startIdx, startIdx + config.fragmentLength).join(' ');
-
-		if (fragment.trim().length < 5) continue;
+		if (fragment.trim().length < 10) continue;
 		usedIds.add(item.id);
 
 		const correctArtist = primaryArtist(item);
@@ -369,13 +383,390 @@ function generateWhoSangLyrics(
 	return results;
 }
 
+function generateWhatLabelReleasedIt(
+	config: WhatLabelReleasedItConfig,
+	items: CollectionItemWithArtists[],
+	questionId: number
+): GeneratedTriviaQuestion[] {
+	const withLabel = items.filter((i) => i.album_label && i.album_label.trim().length > 0);
+	if (withLabel.length < 2) return [];
+
+	const allLabels = [...new Set(withLabel.map((i) => i.album_label!.trim()))];
+	if (allLabels.length < config.optionCount) return [];
+
+	const results: GeneratedTriviaQuestion[] = [];
+	const usedIds = new Set<number>();
+
+	for (let attempt = 0; attempt < config.count * 3 && results.length < config.count; attempt++) {
+		const item = pickRandom(withLabel, 1)[0];
+		if (usedIds.has(item.id)) continue;
+		usedIds.add(item.id);
+
+		const correctLabel = item.album_label!.trim();
+		const distractors = pickRandom(
+			allLabels.filter((l) => l !== correctLabel),
+			config.optionCount - 1
+		);
+
+		const opts: TriviaOption[] = [correctLabel, ...distractors].map((l, idx) => ({
+			label: l,
+			verification:
+				idx === 0
+					? `"${item.track_name}" was released on ${correctLabel}`
+					: undefined
+		}));
+		const { options, correctIndex } = shuffleWithCorrect(opts, 0);
+
+		const subject = config.subject === 'album' ? 'album' : 'song';
+		const name =
+			subject === 'album' ? (item.album_name ?? item.track_name) : item.track_name;
+
+		results.push({
+			templateQuestionId: questionId,
+			questionType: TriviaQuestionType.WhatLabelReleasedIt,
+			questionText: `What record label released "${name}"?`,
+			options,
+			correctIndex,
+			imageUrl: item.album_cover_url
+		});
+	}
+
+	return results;
+}
+
+function generateFinishTheLyric(
+	config: FinishTheLyricConfig,
+	items: CollectionItemWithArtists[],
+	questionId: number
+): GeneratedTriviaQuestion[] {
+	const withLyrics = items.filter((i) => i.lyrics && i.lyrics.trim().length > 0);
+	if (withLyrics.length < 2) return [];
+
+	interface LinePair {
+		firstLine: string;
+		nextLine: string;
+		item: CollectionItemWithArtists;
+	}
+
+	const allPairs: LinePair[] = [];
+	for (const item of withLyrics) {
+		const lines = item
+			.lyrics!.split('\n')
+			.map((l) => l.trim())
+			.filter((l) => l.length > 0 && !l.startsWith('['));
+		for (let i = 0; i < lines.length - 1; i++) {
+			if (lines[i].length >= 10 && lines[i + 1].length >= 10) {
+				allPairs.push({ firstLine: lines[i], nextLine: lines[i + 1], item });
+			}
+		}
+	}
+
+	if (allPairs.length < config.optionCount) return [];
+
+	const results: GeneratedTriviaQuestion[] = [];
+	const usedFirstLines = new Set<string>();
+
+	for (let attempt = 0; attempt < config.count * 5 && results.length < config.count; attempt++) {
+		const pair = pickRandom(allPairs, 1)[0];
+		if (usedFirstLines.has(pair.firstLine)) continue;
+		usedFirstLines.add(pair.firstLine);
+
+		const distractorPairs = allPairs.filter(
+			(p) => p.item.id !== pair.item.id && p.nextLine !== pair.nextLine
+		);
+		if (distractorPairs.length < config.optionCount - 1) continue;
+
+		const distractorLines = pickRandom(
+			[...new Set(distractorPairs.map((p) => p.nextLine))],
+			config.optionCount - 1
+		);
+		if (distractorLines.length < config.optionCount - 1) continue;
+
+		const opts: TriviaOption[] = [pair.nextLine, ...distractorLines].map((line, idx) => ({
+			label: line,
+			verification:
+				idx === 0
+					? `From "${pair.item.track_name}" by ${primaryArtist(pair.item)}`
+					: undefined
+		}));
+		const { options, correctIndex } = shuffleWithCorrect(opts, 0);
+
+		results.push({
+			templateQuestionId: questionId,
+			questionType: TriviaQuestionType.FinishTheLyric,
+			questionText: `Finish the lyric: "${pair.firstLine}..."`,
+			options,
+			correctIndex,
+			imageUrl: pair.item.album_cover_url
+		});
+	}
+
+	return results;
+}
+
+function generateWhatSongFromLyrics(
+	config: WhatSongFromLyricsConfig,
+	items: CollectionItemWithArtists[],
+	questionId: number
+): GeneratedTriviaQuestion[] {
+	const withLyrics = items.filter((i) => i.lyrics && i.lyrics.trim().length > 0);
+	if (withLyrics.length < 2) return [];
+
+	const allTitles = [...new Set(withLyrics.map((i) => i.track_name))];
+	if (allTitles.length < config.optionCount) return [];
+
+	const results: GeneratedTriviaQuestion[] = [];
+	const usedIds = new Set<number>();
+
+	for (let attempt = 0; attempt < config.count * 5 && results.length < config.count; attempt++) {
+		const item = pickRandom(withLyrics, 1)[0];
+		if (usedIds.has(item.id)) continue;
+
+		const paragraphs = item
+			.lyrics!.split(/\n\s*\n/)
+			.map((p) =>
+				p
+					.split('\n')
+					.map((l) => l.trim())
+					.filter((l) => l.length > 0 && !l.startsWith('['))
+					.join(' / ')
+			)
+			.filter((p) => p.length >= 10);
+		if (paragraphs.length === 0) continue;
+
+		const fragment = paragraphs[Math.floor(Math.random() * paragraphs.length)];
+		if (fragment.trim().length < 10) continue;
+		usedIds.add(item.id);
+
+		const correctTitle = item.track_name;
+		const distractors = pickRandom(
+			allTitles.filter((t) => t !== correctTitle),
+			config.optionCount - 1
+		);
+
+		const opts: TriviaOption[] = [correctTitle, ...distractors].map((t, idx) => ({
+			label: t,
+			verification: idx === 0 ? `By ${primaryArtist(item)}` : undefined
+		}));
+		const { options, correctIndex } = shuffleWithCorrect(opts, 0);
+
+		results.push({
+			templateQuestionId: questionId,
+			questionType: TriviaQuestionType.WhatSongFromLyrics,
+			questionText: `Which song contains: "${fragment}"?`,
+			options,
+			correctIndex,
+			imageUrl: item.album_cover_url
+		});
+	}
+
+	return results;
+}
+
+function generateNameTheAlbumFromCover(
+	config: NameTheAlbumFromCoverConfig,
+	items: CollectionItemWithArtists[],
+	questionId: number
+): GeneratedTriviaQuestion[] {
+	const withCoverAndAlbum = items.filter((i) => i.album_cover_url && i.album_name);
+	if (withCoverAndAlbum.length < 2) return [];
+
+	const allAlbums = [...new Set(withCoverAndAlbum.map((i) => i.album_name!))];
+	if (allAlbums.length < config.optionCount) return [];
+
+	const results: GeneratedTriviaQuestion[] = [];
+	const usedAlbums = new Set<string>();
+
+	for (let attempt = 0; attempt < config.count * 3 && results.length < config.count; attempt++) {
+		const item = pickRandom(withCoverAndAlbum, 1)[0];
+		const correctAlbum = item.album_name!;
+		if (usedAlbums.has(correctAlbum)) continue;
+		usedAlbums.add(correctAlbum);
+
+		const distractors = pickRandom(
+			allAlbums.filter((a) => a !== correctAlbum),
+			config.optionCount - 1
+		);
+
+		const opts: TriviaOption[] = [correctAlbum, ...distractors].map((a, idx) => ({
+			label: a,
+			verification: idx === 0 ? `By ${primaryArtist(item)}` : undefined
+		}));
+		const { options, correctIndex } = shuffleWithCorrect(opts, 0);
+
+		results.push({
+			templateQuestionId: questionId,
+			questionType: TriviaQuestionType.NameTheAlbumFromCover,
+			questionText: 'What album is this?',
+			options,
+			correctIndex,
+			imageUrl: item.album_cover_url
+		});
+	}
+
+	return results;
+}
+
+function generateOddOneOut(
+	config: OddOneOutConfig,
+	items: CollectionItemWithArtists[],
+	questionId: number
+): GeneratedTriviaQuestion[] {
+	const albumGroups = new Map<string, CollectionItemWithArtists[]>();
+	for (const item of items) {
+		if (!item.album_name) continue;
+		const list = albumGroups.get(item.album_name) ?? [];
+		list.push(item);
+		albumGroups.set(item.album_name, list);
+	}
+
+	const bigAlbums = [...albumGroups.entries()].filter(([, songs]) => songs.length >= 3);
+	const allAlbumNames = [...albumGroups.keys()];
+	if (bigAlbums.length === 0 || allAlbumNames.length < 2) return [];
+
+	const results: GeneratedTriviaQuestion[] = [];
+	const usedAlbums = new Set<string>();
+
+	for (let attempt = 0; attempt < config.count * 3 && results.length < config.count; attempt++) {
+		const [mainAlbum, mainSongs] = pickRandom(bigAlbums, 1)[0];
+		if (usedAlbums.has(mainAlbum)) continue;
+		usedAlbums.add(mainAlbum);
+
+		const threeSongs = pickRandom(mainSongs, 3);
+
+		const otherAlbums = [...albumGroups.entries()].filter(
+			([name]) => name !== mainAlbum
+		);
+		if (otherAlbums.length === 0) continue;
+		const [oddAlbum, oddSongs] = pickRandom(otherAlbums, 1)[0];
+		const oddSong = pickRandom(oddSongs, 1)[0];
+
+		const allOptions = [...threeSongs, oddSong];
+		const opts: TriviaOption[] = allOptions.map((item, idx) => ({
+			label: item.track_name,
+			verification:
+				idx === 3
+					? `From "${oddAlbum}" (others are from "${mainAlbum}")`
+					: undefined
+		}));
+		const { options, correctIndex } = shuffleWithCorrect(opts, 3);
+
+		results.push({
+			templateQuestionId: questionId,
+			questionType: TriviaQuestionType.OddOneOut,
+			questionText: 'Which song is from a different album than the others?',
+			options,
+			correctIndex,
+			imageUrl: null
+		});
+	}
+
+	return results;
+}
+
+function generateWhatGenreForArtist(
+	config: WhatGenreForArtistConfig,
+	artistsMeta: CollectionArtistWithMetadata[],
+	questionId: number
+): GeneratedTriviaQuestion[] {
+	const withGenres = artistsMeta.filter((a) => a.genres && a.genres.length > 0);
+	if (withGenres.length < 2) return [];
+
+	const allGenres = [...new Set(withGenres.flatMap((a) => a.genres!))];
+	if (allGenres.length < config.optionCount) return [];
+
+	const results: GeneratedTriviaQuestion[] = [];
+	const usedArtists = new Set<string>();
+
+	for (let attempt = 0; attempt < config.count * 3 && results.length < config.count; attempt++) {
+		const artist = pickRandom(withGenres, 1)[0];
+		if (usedArtists.has(artist.id)) continue;
+		usedArtists.add(artist.id);
+
+		const correctGenre = pickRandom(artist.genres!, 1)[0];
+		const distractors = pickRandom(
+			allGenres.filter((g) => !artist.genres!.includes(g)),
+			config.optionCount - 1
+		);
+		if (distractors.length < config.optionCount - 1) continue;
+
+		const opts: TriviaOption[] = [correctGenre, ...distractors].map((g, idx) => ({
+			label: g,
+			verification: idx === 0 ? `${artist.name}'s genre` : undefined
+		}));
+		const { options, correctIndex } = shuffleWithCorrect(opts, 0);
+
+		results.push({
+			templateQuestionId: questionId,
+			questionType: TriviaQuestionType.WhatGenreForArtist,
+			questionText: `What genre is ${artist.name} associated with?`,
+			options,
+			correctIndex,
+			imageUrl: artist.image_url
+		});
+	}
+
+	return results;
+}
+
+function generateMostFollowedArtist(
+	config: MostFollowedArtistConfig,
+	artistsMeta: CollectionArtistWithMetadata[],
+	questionId: number
+): GeneratedTriviaQuestion[] {
+	const withFollowers = artistsMeta.filter(
+		(a) => a.followers != null && a.followers > 0
+	);
+	if (withFollowers.length < config.optionCount) return [];
+
+	const results: GeneratedTriviaQuestion[] = [];
+	const usedSets = new Set<string>();
+
+	for (let attempt = 0; attempt < config.count * 3 && results.length < config.count; attempt++) {
+		const picked = pickRandom(withFollowers, config.optionCount);
+		const key = picked
+			.map((p) => p.id)
+			.sort()
+			.join(',');
+		if (usedSets.has(key)) continue;
+		usedSets.add(key);
+
+		const sorted = [...picked].sort((a, b) => (b.followers ?? 0) - (a.followers ?? 0));
+		const correctArtist = sorted[0];
+
+		const opts: TriviaOption[] = picked.map((a) => ({
+			label: a.name,
+			verification:
+				a.id === correctArtist.id
+					? `${(a.followers ?? 0).toLocaleString()} followers`
+					: undefined,
+			imageUrl: a.image_url
+		}));
+
+		const correctIdx = picked.indexOf(correctArtist);
+		const { options, correctIndex } = shuffleWithCorrect(opts, correctIdx);
+
+		results.push({
+			templateQuestionId: questionId,
+			questionType: TriviaQuestionType.MostFollowedArtist,
+			questionText: 'Which of these artists has the most Spotify followers?',
+			options,
+			correctIndex,
+			imageUrl: null
+		});
+	}
+
+	return results;
+}
+
 // ---------------------------------------------------------------------------
 // Generator dispatcher
 // ---------------------------------------------------------------------------
 
 function generateForQuestion(
 	question: TriviaTemplateQuestionRow,
-	items: CollectionItemWithArtists[]
+	items: CollectionItemWithArtists[],
+	artistsMeta: CollectionArtistWithMetadata[] | null
 ): GeneratedTriviaQuestion[] {
 	switch (question.question_type) {
 		case TriviaQuestionType.WhichCameFirst:
@@ -412,6 +803,48 @@ function generateForQuestion(
 			return generateWhoSangLyrics(
 				question.config as WhoSangLyricsConfig,
 				items,
+				question.id
+			);
+		case TriviaQuestionType.WhatLabelReleasedIt:
+			return generateWhatLabelReleasedIt(
+				question.config as WhatLabelReleasedItConfig,
+				items,
+				question.id
+			);
+		case TriviaQuestionType.FinishTheLyric:
+			return generateFinishTheLyric(
+				question.config as FinishTheLyricConfig,
+				items,
+				question.id
+			);
+		case TriviaQuestionType.WhatSongFromLyrics:
+			return generateWhatSongFromLyrics(
+				question.config as WhatSongFromLyricsConfig,
+				items,
+				question.id
+			);
+		case TriviaQuestionType.NameTheAlbumFromCover:
+			return generateNameTheAlbumFromCover(
+				question.config as NameTheAlbumFromCoverConfig,
+				items,
+				question.id
+			);
+		case TriviaQuestionType.OddOneOut:
+			return generateOddOneOut(
+				question.config as OddOneOutConfig,
+				items,
+				question.id
+			);
+		case TriviaQuestionType.WhatGenreForArtist:
+			return generateWhatGenreForArtist(
+				question.config as WhatGenreForArtistConfig,
+				artistsMeta ?? [],
+				question.id
+			);
+		case TriviaQuestionType.MostFollowedArtist:
+			return generateMostFollowedArtist(
+				question.config as MostFollowedArtistConfig,
+				artistsMeta ?? [],
 				question.id
 			);
 		default:
@@ -465,13 +898,23 @@ export const POST: RequestHandler = async ({ params, request }) => {
 		}
 		const items = await findCollectionItemsWithArtists(colId);
 
+		// Lazily fetch artist metadata only if needed by genre/follower question types
+		const needsArtistMeta = questions.some(
+			(q) =>
+				q.question_type === TriviaQuestionType.WhatGenreForArtist ||
+				q.question_type === TriviaQuestionType.MostFollowedArtist
+		);
+		const artistsMeta = needsArtistMeta
+			? await findCollectionArtistsWithMetadata(colId)
+			: null;
+
 		let totalExpected = 0;
 		const generated: GeneratedTriviaQuestion[] = [];
 
 		for (const question of questions) {
 			const config = question.config as { count?: number };
 			totalExpected += config.count ?? 1;
-			const results = generateForQuestion(question, items);
+			const results = generateForQuestion(question, items, artistsMeta);
 			generated.push(...results);
 		}
 
