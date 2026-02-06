@@ -18,6 +18,7 @@
 		showBackButton = true
 	}: Props = $props();
 
+	// svelte-ignore state_referenced_locally
 	const game = new TriviaGameService(collectionId);
 
 	game.startGame();

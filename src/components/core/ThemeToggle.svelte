@@ -9,7 +9,7 @@
 	} from '$services/theme.service';
 	import { onMount } from 'svelte';
 
-	let currentTheme: Theme = $state('fantasy');
+	let currentTheme = $state<Theme>('fantasy');
 
 	onMount(() => {
 		currentTheme = getEffectiveTheme();

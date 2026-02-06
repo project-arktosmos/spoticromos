@@ -21,7 +21,9 @@
 
 	let { question = null, onsave, oncancel, classes = '' }: Props = $props();
 
+	// svelte-ignore state_referenced_locally
 	let questionType = $state<TriviaQuestionType>(question?.question_type ?? TriviaQuestionType.WhichCameFirst);
+	// svelte-ignore state_referenced_locally
 	let config = $state<TriviaQuestionConfig>(question?.config ? { ...question.config } : { ...DEFAULT_CONFIGS[TriviaQuestionType.WhichCameFirst] });
 
 	const questionTypes = Object.values(TriviaQuestionType);

@@ -86,7 +86,7 @@
 					>
 				</tr>
 				<tr>
-					<td class="font-mono text-sm">_ga_E0XX7BNZD</td>
+					<td class="font-mono text-sm">_ga_E0XX7BNZDS</td>
 					<td class="text-sm">Google Analytics</td>
 					<td class="text-sm">2 years</td>
 					<td class="text-sm">Maintains session state for Google Analytics 4.</td>

@@ -42,6 +42,7 @@
 				<button
 					class="btn btn-ghost btn-sm"
 					onclick={() => removeToast(item.id)}
+					aria-label="Dismiss"
 				>
 					<i class="fa-solid fa-xmark"></i>
 				</button>

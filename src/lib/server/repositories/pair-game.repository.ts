@@ -1,5 +1,5 @@
-import { query } from '$lib/server/db';
-import type { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
+import { query, execute } from '$lib/server/db';
+import type { RowDataPacket } from 'mysql2/promise';
 
 // ---------------------------------------------------------------------------
 // Row types
@@ -30,7 +30,7 @@ export async function savePairGameResult(data: {
 	errors: number;
 	won: boolean;
 }): Promise<number> {
-	const [result] = await query<ResultSetHeader>(
+	const [result] = await execute(
 		`INSERT INTO pair_game_results (user_spotify_id, collection_id, grid_size, moves, errors, won)
 		 VALUES (?, ?, ?, ?, ?, ?)`,
 		[data.userSpotifyId, data.collectionId, data.gridSize, data.moves, data.errors, data.won]

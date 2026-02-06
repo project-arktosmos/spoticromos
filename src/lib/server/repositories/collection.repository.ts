@@ -1,5 +1,5 @@
 import { query, execute } from '$lib/server/db';
-import type { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
+import type { RowDataPacket } from 'mysql2/promise';
 
 // ---------------------------------------------------------------------------
 // Row types
@@ -77,7 +77,7 @@ export async function saveCollection(data: {
 	spotifyPlaylistId: string;
 	spotifyOwnerId: string | null;
 }): Promise<number> {
-	const [result] = await query<ResultSetHeader>(
+	const [result] = await execute(
 		`INSERT INTO collections (name, cover_image_url, spotify_playlist_id, spotify_owner_id)
 		 VALUES (?, ?, ?, ?)
 		 ON DUPLICATE KEY UPDATE
@@ -270,7 +270,7 @@ export async function saveCollectionItem(data: {
 	position: number | null;
 	artistIds: string[];
 }): Promise<number> {
-	const [result] = await query<ResultSetHeader>(
+	const [result] = await execute(
 		`INSERT INTO collection_items
 		   (collection_id, track_name, track_spotify_id, album_name, album_cover_url, album_spotify_id, album_release_year, album_label, lyrics, position)
 		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)

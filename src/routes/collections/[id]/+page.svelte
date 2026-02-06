@@ -380,9 +380,8 @@
 
 {#if modalItem}
 	{@const mRarities = modalRarities}
-	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-	<div class="modal modal-open" onclick={closeDetailModal}>
-		<div class="modal-box max-w-md" onclick={(e) => e.stopPropagation()}>
+	<div class="modal modal-open" role="dialog" onclick={closeDetailModal} onkeydown={(e) => { if (e.key === 'Escape') closeDetailModal(); }}>
+		<div class="modal-box max-w-md" role="presentation" onclick={(e) => e.stopPropagation()}>
 			<button class="btn btn-circle btn-ghost btn-sm absolute top-2 right-2" onclick={closeDetailModal}>&#10005;</button>
 			<div class="flex flex-col gap-4 pt-2">
 				<CollectionItem
@@ -463,9 +462,8 @@
 {/if}
 
 {#if showTriviaModal && collection}
-	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-	<div class="modal modal-open" onclick={() => showTriviaModal = false}>
-		<div class="modal-box max-w-2xl" onclick={(e) => e.stopPropagation()}>
+	<div class="modal modal-open" role="dialog" onclick={() => showTriviaModal = false} onkeydown={(e) => { if (e.key === 'Escape') showTriviaModal = false; }}>
+		<div class="modal-box max-w-2xl" role="presentation" onclick={(e) => e.stopPropagation()}>
 			<button class="btn btn-circle btn-ghost btn-sm absolute top-2 right-2" onclick={() => showTriviaModal = false}>&#10005;</button>
 			{#key showTriviaModal}
 				<TriviaGame
@@ -481,9 +479,8 @@
 {/if}
 
 {#if showPairsModal && collection}
-	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-	<div class="modal modal-open" onclick={() => showPairsModal = false}>
-		<div class="modal-box max-w-4xl" onclick={(e) => e.stopPropagation()}>
+	<div class="modal modal-open" role="dialog" onclick={() => showPairsModal = false} onkeydown={(e) => { if (e.key === 'Escape') showPairsModal = false; }}>
+		<div class="modal-box max-w-4xl" role="presentation" onclick={(e) => e.stopPropagation()}>
 			<button class="btn btn-circle btn-ghost btn-sm absolute top-2 right-2" onclick={() => showPairsModal = false}>&#10005;</button>
 			{#key showPairsModal}
 				<PairsGame
@@ -499,9 +496,8 @@
 {/if}
 
 {#if showProgressModal && allRarities.length > 0}
-	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-	<div class="modal modal-open" onclick={() => showProgressModal = false}>
-		<div class="modal-box max-w-sm" onclick={(e) => e.stopPropagation()}>
+	<div class="modal modal-open" role="dialog" onclick={() => showProgressModal = false} onkeydown={(e) => { if (e.key === 'Escape') showProgressModal = false; }}>
+		<div class="modal-box max-w-sm" role="presentation" onclick={(e) => e.stopPropagation()}>
 			<button class="btn btn-circle btn-ghost btn-sm absolute top-2 right-2" onclick={() => showProgressModal = false}>&#10005;</button>
 			<h3 class="mb-4 text-lg font-bold">Progress</h3>
 			<div class="flex flex-col gap-2">

@@ -179,9 +179,8 @@
 
 {#if modalItem}
 	{@const mRarities = modalRarities}
-	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-	<div class="modal modal-open" onclick={closeDetailModal}>
-		<div class="modal-box max-w-md" onclick={(e) => e.stopPropagation()}>
+	<div class="modal modal-open" role="dialog" onclick={closeDetailModal} onkeydown={(e) => { if (e.key === 'Escape') closeDetailModal(); }}>
+		<div class="modal-box max-w-md" role="presentation" onclick={(e) => e.stopPropagation()}>
 			<button class="btn btn-circle btn-ghost btn-sm absolute top-2 right-2" onclick={closeDetailModal}>&#10005;</button>
 			<div class="flex flex-col gap-4 pt-2">
 				<CollectionItem

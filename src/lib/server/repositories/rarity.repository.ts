@@ -1,5 +1,5 @@
 import { query, execute } from '$lib/server/db';
-import type { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
+import type { RowDataPacket } from 'mysql2/promise';
 import type { RarityRow } from '$types/rarity.type';
 
 // ---------------------------------------------------------------------------
@@ -34,7 +34,7 @@ export async function createRarity(data: {
 	color: string;
 	level: number;
 }): Promise<number> {
-	const [result] = await query<ResultSetHeader>(
+	const [result] = await execute(
 		'INSERT INTO rarities (name, color, level) VALUES (?, ?, ?)',
 		[data.name, data.color, data.level]
 	);

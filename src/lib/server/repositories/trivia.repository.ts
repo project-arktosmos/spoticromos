@@ -1,5 +1,5 @@
 import { query, execute } from '$lib/server/db';
-import type { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
+import type { RowDataPacket } from 'mysql2/promise';
 import type {
 	TriviaQuestionRow,
 	TriviaQuestionType,
@@ -58,7 +58,7 @@ export async function createQuestion(data: {
 	config: TriviaQuestionConfig;
 	position?: number;
 }): Promise<number> {
-	const [result] = await query<ResultSetHeader>(
+	const [result] = await execute(
 		'INSERT INTO trivia_questions (question_type, config, position) VALUES (?, ?, ?)',
 		[data.question_type, JSON.stringify(data.config), data.position ?? 0]
 	);

@@ -36,12 +36,12 @@ export const cookieConsentStore = localStorageWritableStore<CookieConsent>(
 
 export function acceptAllCookies(): void {
 	cookieConsentStore.set({ status: 'accepted', analytics: true });
-	loadAnalytics();
+	grantAnalyticsConsent();
 }
 
 export function acceptEssentialOnly(): void {
 	cookieConsentStore.set({ status: 'accepted', analytics: false });
-	removeAnalytics();
+	denyAnalyticsConsent();
 }
 
 export function hasAnalyticsConsent(): boolean {
@@ -49,34 +49,21 @@ export function hasAnalyticsConsent(): boolean {
 	return consent.status === 'accepted' && consent.analytics;
 }
 
-const GA_ID = 'G-E0XX7BNZD';
-
-export function loadAnalytics(): void {
-	if (typeof window === 'undefined') return;
-	if (document.getElementById('ga-script')) return;
-
-	const script = document.createElement('script');
-	script.id = 'ga-script';
-	script.async = true;
-	script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`;
-	document.head.appendChild(script);
-
-	window.dataLayer = window.dataLayer || [];
-	window.gtag = function (...args: unknown[]) {
-		window.dataLayer.push(args);
-	};
-	window.gtag('js', new Date());
-	window.gtag('config', GA_ID, { send_page_view: false });
+function grantAnalyticsConsent(): void {
+	if (typeof gtag !== 'function') return;
+	gtag('consent', 'update', {
+		analytics_storage: 'granted'
+	});
 }
 
-export function removeAnalytics(): void {
-	if (typeof window === 'undefined') return;
+function denyAnalyticsConsent(): void {
+	if (typeof gtag !== 'function') return;
+	gtag('consent', 'update', {
+		analytics_storage: 'denied'
+	});
 
-	const script = document.getElementById('ga-script');
-	if (script) script.remove();
-
-	window.dataLayer = [];
-
+	// Clean up any existing GA cookies
+	if (typeof document === 'undefined') return;
 	const cookies = document.cookie.split(';');
 	for (const cookie of cookies) {
 		const name = cookie.split('=')[0].trim();
@@ -89,6 +76,6 @@ export function removeAnalytics(): void {
 
 export function initAnalyticsFromConsent(): void {
 	if (hasAnalyticsConsent()) {
-		loadAnalytics();
+		grantAnalyticsConsent();
 	}
 }

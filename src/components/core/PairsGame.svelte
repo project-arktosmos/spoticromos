@@ -19,6 +19,7 @@
 		showBackButton = true
 	}: Props = $props();
 
+	// svelte-ignore state_referenced_locally
 	const game = new PairsGameService(collectionId, user);
 
 	const gridColsMap: Record<number, string> = {

@@ -17,16 +17,15 @@
 
 	let { data } = $props();
 
-	let isOwnProfile = $derived(data.user && profileUser ? data.user.spotifyId === profileUser.spotify_id : false);
-
 	let profileUser = $state<ProfileUser | null>(null);
+	let isOwnProfile = $derived(data.user && profileUser ? data.user.spotifyId === profileUser.spotify_id : false);
 	let collections = $state<CollectionWithCount[]>([]);
 	let progressMap = $state<Map<number, CollectionProgress>>(new Map());
 	let loading = $state(true);
 	let errorMsg = $state('');
 
 	async function fetchProfile() {
-		const id = $page.params.id;
+		const id = $page.params.id!;
 		loading = true;
 		errorMsg = '';
 		try {

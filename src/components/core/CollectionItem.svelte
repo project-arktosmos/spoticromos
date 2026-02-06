@@ -95,10 +95,12 @@
 	<div class={classNames("col-span-2 border-t-2", innerBorderClasses)}></div>
 
 	<!-- Row 2: Album image | Artist image -->
-	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 	<div
 		class={classNames('col-span-2 grid grid-cols-2', { 'cursor-pointer': onToggleStick && owned })}
 		onclick={() => { if (onToggleStick && owned) onToggleStick(); }}
+		onkeydown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && onToggleStick && owned) onToggleStick(); }}
+		role={onToggleStick && owned ? 'button' : undefined}
+		tabindex={onToggleStick && owned ? 0 : undefined}
 	>
 		<div class={albumCellClasses}>
 			{#if item.album_cover_url}
