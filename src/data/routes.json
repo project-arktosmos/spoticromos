@@ -1,0 +1,30 @@
+[
+	{
+		"path": "/",
+		"label": "Home"
+	},
+	{
+		"path": "/collections",
+		"label": "Collections"
+	},
+	{
+		"path": "/database",
+		"label": "Database"
+	},
+	{
+		"path": "/playlists",
+		"label": "Playlists"
+	},
+	{
+		"path": "/spotify",
+		"label": "Spotify"
+	},
+	{
+		"path": "/trivia-templates",
+		"label": "Trivia"
+	},
+	{
+		"path": "/components",
+		"label": "Components"
+	}
+]

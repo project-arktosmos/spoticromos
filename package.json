@@ -15,11 +15,13 @@
 		"test": "vitest run",
 		"test:ui": "vitest --ui",
 		"test:coverage": "vitest run --coverage",
-		"clean": "rm -rf dist .svelte-kit"
+		"clean": "rm -rf dist .svelte-kit",
+		"generate:routes": "node scripts/generate-routes.js"
 	},
 	"dependencies": {
-		"@sveltejs/adapter-static": "^3.0.9",
+		"@sveltejs/adapter-node": "^5.5.2",
 		"classnames": "^2.5.1",
+		"mysql2": "^3.16.3",
 		"svelte-i18n": "^4.0.1"
 	},
 	"devDependencies": {
