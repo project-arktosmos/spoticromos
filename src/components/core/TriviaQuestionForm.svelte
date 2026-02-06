@@ -15,7 +15,7 @@
 	interface Props {
 		question?: TriviaQuestionRow | null;
 		onsave: (payload: CreateTriviaQuestionPayload) => void;
-		oncancel: () => void;
+		oncancel?: () => void;
 		classes?: string;
 	}
 
@@ -64,7 +64,9 @@
 	</div>
 
 	<div class="flex justify-end gap-2 pt-2">
-		<button class="btn btn-ghost" onclick={oncancel}>Cancel</button>
+		{#if oncancel}
+			<button class="btn btn-ghost" onclick={oncancel}>Cancel</button>
+		{/if}
 		<button class="btn btn-primary" onclick={handleSubmit}>
 			{question ? 'Save changes' : 'Add question'}
 		</button>

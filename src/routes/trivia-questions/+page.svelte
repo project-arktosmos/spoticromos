@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import classNames from 'classnames';
 	import TriviaQuestionForm from '$components/core/TriviaQuestionForm.svelte';
-	import TriviaQuestionReadOnly from '$components/core/TriviaQuestionReadOnly.svelte';
 	import type {
 		TriviaQuestionRow,
 		CollectionSummary,
@@ -23,7 +23,6 @@
 	let selectedCollectionId = $state<number | null>(null);
 
 	// Inline editing
-	let editingId = $state<number | null>(null);
 	let creatingNew = $state(false);
 	let saving = $state(false);
 
@@ -75,21 +74,11 @@
 	// ---------------------------------------------------------------------------
 
 	function openCreate() {
-		editingId = null;
 		creatingNew = true;
 	}
 
 	function cancelCreate() {
 		creatingNew = false;
-	}
-
-	function startEdit(questionId: number) {
-		creatingNew = false;
-		editingId = questionId;
-	}
-
-	function cancelEdit() {
-		editingId = null;
 	}
 
 	async function handleSave(payload: CreateTriviaQuestionPayload, questionId?: number) {
@@ -114,7 +103,6 @@
 				throw new Error(data?.message ?? `HTTP ${res.status}`);
 			}
 
-			editingId = null;
 			creatingNew = false;
 			loading = true;
 			await fetchQuestions();
@@ -304,36 +292,71 @@
 	{:else}
 		<div class="flex flex-col gap-3">
 			{#each questions as question (question.id)}
-				{#if editingId === question.id}
-					<div class="rounded-xl border border-primary bg-base-100 p-5 shadow-sm">
-						<h2 class="mb-4 text-lg font-semibold">Edit Question</h2>
-						{#key question.id}
-							<TriviaQuestionForm
-								{question}
-								onsave={(payload) => handleSave(payload, question.id)}
-								oncancel={cancelEdit}
-							/>
-						{/key}
+				{@const generatedQuestions = generatedResults.get(question.id) ?? []}
+				<div class="rounded-xl border border-base-300 bg-base-100 p-4 shadow-sm">
+					{#key question.id}
+						<TriviaQuestionForm
+							{question}
+							onsave={(payload) => handleSave(payload, question.id)}
+						/>
+					{/key}
+
+					<div class="mt-3 flex items-center gap-2 border-t border-base-300 pt-3">
+						<button
+							class="btn btn-primary btn-xs"
+							disabled={!selectedCollectionId || generatingAll || generatingQuestionId === question.id}
+							onclick={() => handleGenerate(question.id)}
+						>
+							{#if generatingAll || generatingQuestionId === question.id}
+								<span class="loading loading-spinner loading-xs"></span>
+							{/if}
+							Generate
+						</button>
+						<div class="flex-1"></div>
+						<button class="btn btn-ghost btn-xs text-error" onclick={() => handleDelete(question)}>Delete</button>
 					</div>
-				{:else}
-					<div class="rounded-xl border border-base-300 bg-base-100 p-4 shadow-sm">
-						<div class="flex items-center gap-2">
-							<div class="flex-1">
-								<TriviaQuestionReadOnly
-									{question}
-									generating={generatingAll || generatingQuestionId === question.id}
-									generatedQuestions={generatedResults.get(question.id) ?? []}
-									collectionSelected={selectedCollectionId !== null}
-									ongenerate={() => handleGenerate(question.id)}
-								/>
-							</div>
-							<div class="flex gap-1">
-								<button class="btn btn-ghost btn-sm" onclick={() => startEdit(question.id)}>Edit</button>
-								<button class="btn btn-ghost btn-sm text-error" onclick={() => handleDelete(question)}>Delete</button>
-							</div>
+
+					{#if generatedQuestions.length > 0}
+						<div class="mt-2 flex flex-col gap-2">
+							{#each generatedQuestions as gq, qi (qi)}
+								<div class="rounded-md bg-base-300 p-3">
+									<div class="flex items-start gap-3">
+										{#if gq.imageUrl}
+											<img
+												src={gq.imageUrl}
+												alt=""
+												class="h-12 w-12 shrink-0 rounded object-cover"
+											/>
+										{/if}
+										<div class="flex flex-1 flex-col gap-1">
+											{#each gq.options as option, i}
+												<div class={classNames(
+													'flex items-center gap-2 rounded px-2 py-1 text-sm',
+													{
+														'bg-success/20 font-semibold': i === gq.correctIndex,
+														'bg-base-100': i !== gq.correctIndex
+													}
+												)}>
+													{#if option.imageUrl}
+														<img
+															src={option.imageUrl}
+															alt=""
+															class="h-8 w-8 shrink-0 rounded object-cover"
+														/>
+													{/if}
+													<span class="flex-1">{option.label}</span>
+													{#if option.verification}
+														<span class="text-base-content/50 text-xs">{option.verification}</span>
+													{/if}
+												</div>
+											{/each}
+										</div>
+									</div>
+								</div>
+							{/each}
 						</div>
-					</div>
-				{/if}
+					{/if}
+				</div>
 			{/each}
 		</div>
 	{/if}
