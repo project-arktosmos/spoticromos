@@ -29,5 +29,18 @@
 		"unauthorized": "Unauthorized",
 		"forbidden": "Forbidden",
 		"serverError": "Server error"
+	},
+	"footer": {
+		"poweredBy": "All content displayed on Spoticromos is provided by",
+		"spotify": "Spotify",
+		"privacyPolicy": "Privacy Policy",
+		"termsOfService": "Terms of Service",
+		"cookiePolicy": "Cookie Policy",
+		"copyright": "All rights reserved."
+	},
+	"cookie": {
+		"message": "This site uses cookies and local storage for authentication and preferences.",
+		"learnMore": "Learn more",
+		"accept": "Accept"
 	}
 }

@@ -85,7 +85,7 @@
 				</p>
 			</div>
 			{#if isOwnProfile}
-				<a href="/playlists" class="btn btn-primary btn-sm ml-auto">Add Collections</a>
+				<a href="/import" class="btn btn-primary btn-sm ml-auto">Add Collections</a>
 			{/if}
 		</div>
 

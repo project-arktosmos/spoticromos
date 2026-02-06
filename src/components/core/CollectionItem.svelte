@@ -50,6 +50,17 @@
 			'grayscale-[50%] opacity-80': owned && !stuck
 		}
 	));
+
+	let innerBorderStyle = $derived(() => {
+		if (!rarityColor) return '';
+		if (stuck) return `border-color: ${rarityColor};`;
+		if (owned) return `border-color: ${rarityColor}40;`;
+		return `border-color: ${rarityColor}20;`;
+	});
+
+	let innerBorderClasses = $derived(classNames(
+		{ 'border-dashed': owned && !stuck }
+	));
 </script>
 
 <div class={computedClasses} style={cardStyle()}>
@@ -60,7 +71,7 @@
 
 	<!-- Rarity divider top -->
 	{#if rarityColor}
-		<div class="col-span-2 h-0.5" style="background-color: {rarityColor}"></div>
+		<div class={classNames("col-span-2 border-t-2", innerBorderClasses)} style={innerBorderStyle()}></div>
 	{/if}
 
 	<!-- Row 2: Album image | Artist image -->
@@ -69,7 +80,7 @@
 		class={classNames('col-span-2 grid grid-cols-2', { 'cursor-pointer': onToggleStick && owned })}
 		onclick={() => { if (onToggleStick && owned) onToggleStick(); }}
 	>
-		<div class="border-r-2" style={rarityColor ? `border-color: ${rarityColor};` : ''}>
+		<div class={classNames("border-r-2", innerBorderClasses)} style={innerBorderStyle()}>
 			{#if item.album_cover_url}
 				<img
 					src={item.album_cover_url}
@@ -87,13 +98,13 @@
 				<img
 					src={item.artist_image_url}
 					alt={item.artists ?? ''}
-					class={classNames(imageClasses, 'rounded-full border-2 object-cover')}
-					style={rarityColor ? `border-color: ${rarityColor};` : ''}
+					class={classNames(imageClasses, 'rounded-full border-2 object-cover', innerBorderClasses)}
+					style={innerBorderStyle()}
 				/>
 			{:else}
 				<div
-					class="bg-base-300 flex aspect-square w-full items-center justify-center rounded-full border-2"
-					style={rarityColor ? `border-color: ${rarityColor};` : ''}
+					class={classNames("bg-base-300 flex aspect-square w-full items-center justify-center rounded-full border-2", innerBorderClasses)}
+					style={innerBorderStyle()}
 				>
 					<span class="text-base-content/30 text-3xl">&#9834;</span>
 				</div>
@@ -103,7 +114,7 @@
 
 	<!-- Rarity divider bottom -->
 	{#if rarityColor}
-		<div class="col-span-2 h-0.5" style="background-color: {rarityColor}"></div>
+		<div class={classNames("col-span-2 border-t-2", innerBorderClasses)} style={innerBorderStyle()}></div>
 	{/if}
 
 	<!-- Row 3: Album | Artist -->

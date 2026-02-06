@@ -29,5 +29,18 @@
 		"unauthorized": "QQQQQ",
 		"forbidden": "QQQQQ",
 		"serverError": "QQQQQ"
+	},
+	"footer": {
+		"poweredBy": "QQQQQ",
+		"spotify": "QQQQQ",
+		"privacyPolicy": "QQQQQ",
+		"termsOfService": "QQQQQ",
+		"cookiePolicy": "QQQQQ",
+		"copyright": "QQQQQ"
+	},
+	"cookie": {
+		"message": "QQQQQ",
+		"learnMore": "QQQQQ",
+		"accept": "QQQQQ"
 	}
 }

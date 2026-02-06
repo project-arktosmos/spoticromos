@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import classNames from 'classnames';
 	import { spotifyService } from '$services/spotify.service';
 	import type { SpotifyPlaylist } from '$types/spotify.type';
 
@@ -8,6 +9,7 @@
 	let loading = $state(false);
 	let total = $state(0);
 	let offset = $state(0);
+	let importedIds = $state<Set<string>>(new Set());
 	const limit = 20;
 
 	onMount(() => {
@@ -16,7 +18,22 @@
 			return;
 		}
 		fetchPlaylists();
+		fetchImportedCollections();
 	});
+
+	async function fetchImportedCollections() {
+		try {
+			const res = await fetch('/api/collections?limit=100');
+			if (res.ok) {
+				const data = await res.json();
+				importedIds = new Set(
+					data.collections.map((c: { spotify_playlist_id: string }) => c.spotify_playlist_id)
+				);
+			}
+		} catch {
+			// Non-critical
+		}
+	}
 
 	async function fetchPlaylists() {
 		loading = true;
@@ -45,7 +62,7 @@
 
 <div class="mx-auto flex min-h-screen max-w-4xl flex-col gap-6 p-8">
 	<div class="flex items-center justify-between">
-		<h1 class="text-2xl font-bold">Your Playlists</h1>
+		<h1 class="text-2xl font-bold">Import</h1>
 		<div class="flex gap-2">
 			<button class="btn btn-outline btn-sm" onclick={refetchPlaylists} disabled={loading}>
 				{#if loading}
@@ -62,7 +79,7 @@
 
 		<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 			{#each playlists as playlist (playlist.id)}
-				<a href="/playlists/{playlist.id}" class="card bg-base-200 shadow-sm transition-shadow hover:shadow-md">
+				<a href="/import/{playlist.id}" class="card bg-base-200 shadow-sm transition-shadow hover:shadow-md">
 					{#if playlist.images?.[0]?.url}
 						<figure>
 							<img

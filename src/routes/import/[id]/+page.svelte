@@ -240,7 +240,7 @@
 
 <div class="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 p-8">
 	<div class="flex items-center gap-2">
-		<a href="/playlists" class="btn btn-ghost btn-sm">&larr; Back</a>
+		<a href="/import" class="btn btn-ghost btn-sm">&larr; Back</a>
 	</div>
 
 	{#if playlist}

@@ -95,7 +95,7 @@
 				</div>
 			{/if}
 
-			<div class="flex flex-wrap justify-center gap-4">
+			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
 				{#each cards as card, i}
 					{#if card.revealed && card.item}
 						<CollectionItem
@@ -106,38 +106,40 @@
 					{:else}
 						<button
 							class={classNames(
-								'grid w-72 shrink-0 grid-cols-2 overflow-hidden rounded-lg border border-black bg-base-300',
-								'cursor-pointer transition-transform hover:scale-105',
+								'grid w-full grid-cols-2 overflow-hidden rounded-lg border-2 border-black bg-base-300 relative',
+								'cursor-pointer transition-all duration-300 hover:scale-105',
 								{ 'animate-pulse pointer-events-none': card.loading }
 							)}
 							disabled={card.loading}
 							onclick={() => claimCard(i)}
 						>
-							<!-- Row 1: matches CollectionItem track name row -->
+							<!-- Row 1: Track name -->
 							<div class="col-span-2 flex items-center justify-center p-2">
-								<h3 class="text-sm font-semibold">???</h3>
+								<h3 class="truncate text-center text-sm font-semibold">???</h3>
 							</div>
-							<!-- Row 2: two square cells -->
-							<div class="bg-base-300 flex aspect-square w-full items-center justify-center">
-								{#if card.loading}
-									<span class="loading loading-spinner loading-md"></span>
-								{:else}
-									<span class="text-base-content/20 text-5xl">?</span>
-								{/if}
+							<!-- Row 2: Album | Artist images -->
+							<div class="col-span-2 grid grid-cols-2">
+								<div class="border-r-2 bg-base-300 flex aspect-square w-full items-center justify-center">
+									{#if card.loading}
+										<span class="loading loading-spinner loading-md"></span>
+									{:else}
+										<span class="text-base-content/20 text-5xl">?</span>
+									{/if}
+								</div>
+								<div class="flex aspect-square w-full items-center justify-center overflow-hidden p-3">
+									{#if card.loading}
+										<span class="loading loading-spinner loading-md"></span>
+									{:else}
+										<span class="text-base-content/20 text-5xl">?</span>
+									{/if}
+								</div>
 							</div>
-							<div class="bg-base-300 flex aspect-square w-full items-center justify-center">
-								{#if card.loading}
-									<span class="loading loading-spinner loading-md"></span>
-								{:else}
-									<span class="text-base-content/20 text-5xl">?</span>
-								{/if}
-							</div>
-							<!-- Row 3: matches CollectionItem label rows -->
+							<!-- Row 3: Album | Artist labels -->
 							<div class="flex items-center justify-center p-2">
-								<p class="text-base-content/40 text-xs">???</p>
+								<p class="text-base-content/60 line-clamp-2 text-center text-xs">???</p>
 							</div>
 							<div class="flex items-center justify-center p-2">
-								<p class="text-base-content/40 text-xs">???</p>
+								<p class="text-base-content/70 line-clamp-2 text-center text-xs">???</p>
 							</div>
 						</button>
 					{/if}
