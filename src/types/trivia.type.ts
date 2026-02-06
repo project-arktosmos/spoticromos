@@ -34,6 +34,48 @@ export const TRIVIA_QUESTION_TYPE_LABELS: Record<TriviaQuestionType, string> = {
 	[TriviaQuestionType.MostFollowedArtist]: 'Which artist has the most followers?'
 };
 
+/**
+ * Returns the question template text for a given type + config.
+ * Incorporates subject (song/album) into the text where applicable.
+ */
+export function getQuestionTemplateText(
+	type: TriviaQuestionType,
+	config: TriviaQuestionConfig
+): string {
+	const subject = (config as unknown as Record<string, unknown>).subject as string | undefined;
+
+	switch (type) {
+		case TriviaQuestionType.WhichCameFirst:
+			return `Which ${subject ?? 'song'} came out first?`;
+		case TriviaQuestionType.WhatYearReleased:
+			return `What year was the ${subject ?? 'song'} released?`;
+		case TriviaQuestionType.WhatAlbumForSong:
+			return 'What album was the song on?';
+		case TriviaQuestionType.WhatArtistForTitle:
+			return `What artist released the ${subject ?? 'song'}?`;
+		case TriviaQuestionType.ArtistFirstAlbum:
+			return "Which was the artist's first album?";
+		case TriviaQuestionType.WhoSangLyrics:
+			return 'Who sang these lyrics?';
+		case TriviaQuestionType.WhatLabelReleasedIt:
+			return `What record label released the ${subject ?? 'song'}?`;
+		case TriviaQuestionType.FinishTheLyric:
+			return 'Finish the lyric';
+		case TriviaQuestionType.WhatSongFromLyrics:
+			return 'Which song contains these lyrics?';
+		case TriviaQuestionType.NameTheAlbumFromCover:
+			return 'Name the album from its cover';
+		case TriviaQuestionType.OddOneOut:
+			return 'Which song is the odd one out?';
+		case TriviaQuestionType.WhatGenreForArtist:
+			return 'What genre is the artist?';
+		case TriviaQuestionType.MostFollowedArtist:
+			return 'Which artist has the most followers?';
+		default:
+			return TRIVIA_QUESTION_TYPE_LABELS[type] ?? type;
+	}
+}
+
 // ---------------------------------------------------------------------------
 // Per-question-type config shapes
 // ---------------------------------------------------------------------------

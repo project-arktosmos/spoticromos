@@ -13,7 +13,8 @@ function getPool(): Pool {
 			password: env.DB_PASSWORD || '',
 			database: env.DB_NAME || 'spoticromos',
 			waitForConnections: true,
-			connectionLimit: 10
+			connectionLimit: 10,
+			ssl: env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined
 		});
 	}
 	return pool;

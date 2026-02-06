@@ -1,6 +1,6 @@
 <script lang="ts">
 	import classNames from 'classnames';
-	import type { GeneratedTriviaQuestion } from '$types/trivia.type';
+	import type { ClientTriviaQuestion } from '$types/trivia.type';
 
 	interface Props {
 		collectionId: number;
@@ -23,36 +23,38 @@
 	// ---------------------------------------------------------------------------
 
 	const MAX_STRIKES = 3;
-	const FETCH_THRESHOLD = 5;
+	const FETCH_THRESHOLD = 3;
 
 	// ---------------------------------------------------------------------------
 	// Game state
 	// ---------------------------------------------------------------------------
 
 	let loadingQuestions = $state(true);
-	let questions = $state<GeneratedTriviaQuestion[]>([]);
+	let sessionId = $state('');
+	let questions = $state<ClientTriviaQuestion[]>([]);
 	let currentIndex = $state(0);
 	let questionNumber = $state(0);
 	let score = $state(0);
 	let strikes = $state(0);
+	let totalRewardsEarned = $state(0);
 	let selectedOptionIndex = $state<number | null>(null);
 	let answered = $state(false);
+	let answerPending = $state(false);
 	let gameStarted = $state(false);
 	let gameFinished = $state(false);
 	let questionsExhausted = $state(false);
 	let errorMsg = $state('');
 
-	// Reward tracking
-	let totalRewardsEarned = $state(0);
+	// Revealed after server validates answer
+	let revealedCorrectIndex = $state<number | null>(null);
+	let revealedVerifications = $state<(string | undefined)[]>([]);
 
-	// Submission
-	let submitting = $state(false);
+	// Submission / reward
 	let rewardResult = $state<{ rewards: number; newHighscore: boolean } | null>(null);
 
-	// Auto-fetch
+	// Fetch-more
 	let isFetchingMore = $state(false);
 	let fetchExhausted = $state(false);
-	let usedQuestionTexts = $state<Set<string>>(new Set());
 	let waitingForFetch = $state(false);
 
 	// ---------------------------------------------------------------------------
@@ -68,57 +70,29 @@
 	);
 
 	// ---------------------------------------------------------------------------
-	// Helpers
+	// Fetch more questions from session
 	// ---------------------------------------------------------------------------
-
-	function shuffle<T>(arr: T[]): T[] {
-		const a = [...arr];
-		for (let i = a.length - 1; i > 0; i--) {
-			const j = Math.floor(Math.random() * (i + 1));
-			[a[i], a[j]] = [a[j], a[i]];
-		}
-		return a;
-	}
-
-	function trackQuestionTexts(qs: GeneratedTriviaQuestion[]): GeneratedTriviaQuestion[] {
-		const unique = qs.filter((q) => !usedQuestionTexts.has(q.questionText));
-		for (const q of unique) {
-			usedQuestionTexts.add(q.questionText);
-		}
-		return unique;
-	}
-
-	// ---------------------------------------------------------------------------
-	// Question fetching
-	// ---------------------------------------------------------------------------
-
-	async function generateQuestions(): Promise<GeneratedTriviaQuestion[]> {
-		try {
-			const res = await fetch('/api/trivia-questions/generate', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ collectionId })
-			});
-			if (!res.ok) return [];
-			const data = await res.json();
-			return data.trivia?.questions ?? [];
-		} catch {
-			return [];
-		}
-	}
 
 	async function fetchMoreQuestions() {
-		if (isFetchingMore || fetchExhausted) return;
+		if (isFetchingMore || fetchExhausted || !sessionId) return;
 		isFetchingMore = true;
 
 		try {
-			const newQuestions = await generateQuestions();
-			const unique = trackQuestionTexts(newQuestions);
-
-			if (unique.length === 0) {
+			const res = await fetch('/api/trivia/fetch-more', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ sessionId })
+			});
+			if (!res.ok) {
 				fetchExhausted = true;
-			} else {
-				questions = [...questions, ...shuffle(unique)];
+				return;
+			}
+			const data = await res.json();
+			if (data.questions.length > 0) {
+				questions = [...questions, ...data.questions];
+			}
+			if (data.exhausted) {
+				fetchExhausted = true;
 			}
 		} catch {
 			fetchExhausted = true;
@@ -148,14 +122,25 @@
 		errorMsg = '';
 
 		try {
-			const allQuestions = await generateQuestions();
+			const res = await fetch('/api/trivia/start', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ collectionId })
+			});
 
-			if (allQuestions.length === 0) {
+			if (!res.ok) {
+				const data = await res.json().catch(() => null);
+				throw new Error(data?.message ?? 'Failed to start game');
+			}
+
+			const data = await res.json();
+
+			if (!data.questions || data.questions.length === 0) {
 				throw new Error('Could not generate any questions for this collection.');
 			}
 
-			const unique = trackQuestionTexts(allQuestions);
-			questions = shuffle(unique);
+			sessionId = data.sessionId;
+			questions = data.questions;
 			currentIndex = 0;
 			questionNumber = 0;
 			score = 0;
@@ -163,11 +148,16 @@
 			totalRewardsEarned = 0;
 			selectedOptionIndex = null;
 			answered = false;
+			answerPending = false;
+			revealedCorrectIndex = null;
+			revealedVerifications = [];
 			gameStarted = true;
 			gameFinished = false;
 			questionsExhausted = false;
 			rewardResult = null;
 			waitingForFetch = false;
+			isFetchingMore = false;
+			fetchExhausted = false;
 
 			checkFetchThreshold();
 		} catch (err) {
@@ -177,28 +167,59 @@
 		}
 	}
 
-	function selectOption(index: number) {
-		if (answered) return;
+	async function selectOption(index: number) {
+		if (answered || answerPending || !currentQuestion) return;
 		selectedOptionIndex = index;
-		answered = true;
-		questionNumber++;
+		answerPending = true;
 
-		if (currentQuestion && index === currentQuestion.correctIndex) {
-			score++;
-			const reward = 1 + Math.floor((questionNumber - 1) / 5);
-			totalRewardsEarned += reward;
-		} else {
-			strikes++;
-		}
+		try {
+			const res = await fetch('/api/trivia/answer', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					sessionId,
+					sessionIndex: currentQuestion.sessionIndex,
+					selectedOptionIndex: index
+				})
+			});
 
-		setTimeout(() => {
-			if (strikes >= MAX_STRIKES) {
-				gameFinished = true;
-				submitResult();
-			} else {
-				advanceOrFinish();
+			if (!res.ok) {
+				const data = await res.json().catch(() => null);
+				throw new Error(data?.message ?? 'Failed to submit answer');
 			}
-		}, 1500);
+
+			const result = await res.json();
+
+			// Reveal answer
+			answered = true;
+			revealedCorrectIndex = result.correctIndex;
+			revealedVerifications = result.verification ?? [];
+
+			// Update state from server
+			score = result.score;
+			strikes = result.strikes;
+			questionNumber = result.questionNumber;
+			totalRewardsEarned = result.totalRewardsEarned;
+
+			// Append piggybacked questions
+			if (result.nextQuestions && result.nextQuestions.length > 0) {
+				questions = [...questions, ...result.nextQuestions];
+			}
+
+			// After reveal delay, advance or finish
+			setTimeout(() => {
+				if (result.gameOver) {
+					gameFinished = true;
+					questionsExhausted = result.gameOverReason === 'exhausted';
+					rewardResult = result.finalResult ?? null;
+				} else {
+					advanceOrFinish();
+				}
+			}, 1500);
+		} catch (err) {
+			errorMsg = err instanceof Error ? err.message : 'Connection error';
+			answerPending = false;
+		}
 	}
 
 	function advanceOrFinish() {
@@ -206,36 +227,21 @@
 			currentIndex++;
 			selectedOptionIndex = null;
 			answered = false;
+			answerPending = false;
+			revealedCorrectIndex = null;
+			revealedVerifications = [];
 			checkFetchThreshold();
 		} else if (isFetchingMore) {
 			waitingForFetch = true;
 		} else {
-			questionsExhausted = true;
-			gameFinished = true;
-			submitResult();
-		}
-	}
-
-	async function submitResult() {
-		if (!user) return;
-		submitting = true;
-		try {
-			const res = await fetch('/api/trivia/complete', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					collectionId,
-					score,
-					totalQuestions: questionNumber
-				})
-			});
-			if (res.ok) {
-				rewardResult = await res.json();
+			// No more questions and not fetching — explicitly fetch more
+			if (!fetchExhausted) {
+				waitingForFetch = true;
+				fetchMoreQuestions();
+			} else {
+				questionsExhausted = true;
+				gameFinished = true;
 			}
-		} catch {
-			// silent
-		} finally {
-			submitting = false;
 		}
 	}
 
@@ -245,6 +251,7 @@
 	}
 
 	function resetGame() {
+		sessionId = '';
 		questions = [];
 		currentIndex = 0;
 		questionNumber = 0;
@@ -253,6 +260,9 @@
 		totalRewardsEarned = 0;
 		selectedOptionIndex = null;
 		answered = false;
+		answerPending = false;
+		revealedCorrectIndex = null;
+		revealedVerifications = [];
 		gameStarted = false;
 		gameFinished = false;
 		questionsExhausted = false;
@@ -260,7 +270,6 @@
 		errorMsg = '';
 		isFetchingMore = false;
 		fetchExhausted = false;
-		usedQuestionTexts = new Set();
 		waitingForFetch = false;
 	}
 
@@ -334,12 +343,12 @@
 							'btn btn-block justify-start text-left',
 							{
 								'btn-outline': !answered,
-								'btn-success': answered && i === currentQuestion.correctIndex,
-								'btn-error': answered && i === selectedOptionIndex && i !== currentQuestion.correctIndex,
-								'btn-ghost opacity-50': answered && i !== selectedOptionIndex && i !== currentQuestion.correctIndex
+								'btn-success': answered && i === revealedCorrectIndex,
+								'btn-error': answered && i === selectedOptionIndex && i !== revealedCorrectIndex,
+								'btn-ghost opacity-50': answered && i !== selectedOptionIndex && i !== revealedCorrectIndex
 							}
 						)}
-						disabled={answered}
+						disabled={answered || answerPending}
 						onclick={() => selectOption(i)}
 					>
 						{#if option.imageUrl}
@@ -350,8 +359,8 @@
 							/>
 						{/if}
 						<span class="flex-1">{option.label}</span>
-						{#if answered && option.verification}
-							<span class="text-xs opacity-70">{option.verification}</span>
+						{#if answered && revealedVerifications[i]}
+							<span class="text-xs opacity-70">{revealedVerifications[i]}</span>
 						{/if}
 					</button>
 				{/each}
@@ -400,9 +409,7 @@
 				{/each}
 			</div>
 
-			{#if submitting}
-				<span class="loading loading-spinner loading-sm"></span>
-			{:else if rewardResult && rewardResult.rewards > 0}
+			{#if rewardResult && rewardResult.rewards > 0}
 				<div class="alert alert-success mt-2">
 					<span class="font-semibold">
 						+{rewardResult.rewards} reward{rewardResult.rewards > 1 ? 's' : ''}
@@ -411,7 +418,7 @@
 						{/if}
 					</span>
 				</div>
-			{:else if totalRewardsEarned > 0 && !submitting}
+			{:else if totalRewardsEarned > 0}
 				<div class="alert alert-success mt-2">
 					<span class="font-semibold">
 						+{totalRewardsEarned} reward{totalRewardsEarned > 1 ? 's' : ''} earned
